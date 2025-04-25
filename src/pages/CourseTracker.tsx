@@ -29,16 +29,14 @@ const CourseTracker = () => {
   const { toast } = useToast();
   const [editMode, setEditMode] = useState(false);
   const [semesterGPAs, setSemesterGPAs] = useState([
-    { semester: "1st (Odd) Semester", sgpa: 3.4 },
-    { semester: "2nd (Even) Semester", sgpa: 3.5 },
-    { semester: "3rd (Odd) Semester", sgpa: 3.7 },
-    { semester: "4th (Even) Semester", sgpa: 3.75 },
-    { semester: "5th (Odd) Semester", sgpa: 3.8 },
-    { semester: "6th (Even) Semester", sgpa: 3.6 },
-    { semester: "7th (Odd) Semester", sgpa: 3.9 },
-    { semester: "8th (Even) Semester", sgpa: 3.85 },
-    { semester: "9th (Odd) Semester", sgpa: 3.95 },
-    { semester: "10th (Even) Semester", sgpa: 4.0 }
+    { semester: "1st (Odd) Semester", sgpa: 8.4 },
+    { semester: "2nd (Even) Semester", sgpa: 8.5 },
+    { semester: "3rd (Odd) Semester", sgpa: 8.7 },
+    { semester: "4th (Even) Semester", sgpa: 8.75 },
+    { semester: "5th (Odd) Semester", sgpa: 8.8 },
+    { semester: "6th (Even) Semester", sgpa: 8.6 },
+    { semester: "7th (Odd) Semester", sgpa: 8.9 },
+    { semester: "8th (Even) Semester", sgpa: 8.85 }
   ]);
   const [newSemester, setNewSemester] = useState({ semester: "", sgpa: "" });
 
@@ -51,10 +49,10 @@ const CourseTracker = () => {
   const handleAddSemester = () => {
     if (newSemester.semester && newSemester.sgpa) {
       const sgpa = parseFloat(newSemester.sgpa);
-      if (sgpa < 0 || sgpa > 4) {
+      if (sgpa < 0 || sgpa > 10) {
         toast({
           title: "Invalid SGPA",
-          description: "SGPA must be between 0 and 4",
+          description: "SGPA must be between 0 and 10",
           variant: "destructive",
         });
         return;
@@ -76,7 +74,7 @@ const CourseTracker = () => {
     });
   };
 
-  const [cgpa, setCgpa] = useState("3.75");
+  const [cgpa, setCgpa] = useState("8.75");
 
   const [courseGrades, setCourseGrades] = useState([
     { name: "CS101", grade: "A", points: 4.0, marksObtained: 92, totalMarks: 100 },
@@ -98,16 +96,14 @@ const CourseTracker = () => {
   });
 
   const gpaTrend = [
-    { semester: "1st (Odd)", gpa: 3.4 },
-    { semester: "2nd (Even)", gpa: 3.5 },
-    { semester: "3rd (Odd)", gpa: 3.7 },
-    { semester: "4th (Even)", gpa: 3.75 },
-    { semester: "5th (Odd)", gpa: 3.8 },
-    { semester: "6th (Even)", gpa: 3.6 },
-    { semester: "7th (Odd)", gpa: 3.9 },
-    { semester: "8th (Even)", gpa: 3.85 },
-    { semester: "9th (Odd)", gpa: 3.95 },
-    { semester: "10th (Even)", gpa: 4.0 }
+    { semester: "1st (Odd)", gpa: 8.4 },
+    { semester: "2nd (Even)", gpa: 8.5 },
+    { semester: "3rd (Odd)", gpa: 8.7 },
+    { semester: "4th (Even)", gpa: 8.75 },
+    { semester: "5th (Odd)", gpa: 8.8 },
+    { semester: "6th (Even)", gpa: 8.6 },
+    { semester: "7th (Odd)", gpa: 8.9 },
+    { semester: "8th (Even)", gpa: 8.85 }
   ];
 
   const currentCourses = [
@@ -287,7 +283,7 @@ const CourseTracker = () => {
                 onChange={(e) => setNewSemester({ ...newSemester, sgpa: e.target.value })}
                 step="0.01"
                 min="0"
-                max="4"
+                max="10"
                 className="w-32"
               />
               <Button onClick={handleAddSemester}>Add Semester</Button>
