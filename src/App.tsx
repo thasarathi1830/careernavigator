@@ -11,6 +11,9 @@ import Profile from "./pages/Profile";
 import CourseTracker from "./pages/CourseTracker";
 import JobPortal from "./pages/JobPortal";
 import Projects from "./pages/Projects";
+import Exams from "./pages/Exams";
+import Forum from "./pages/Forum";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -69,10 +72,7 @@ const App = () => (
               path="/exams"
               element={
                 <Layout>
-                  <div className="container py-8">
-                    <h1 className="text-3xl font-bold mb-6">Exams & Assignments</h1>
-                    <p className="text-gray-500">This feature is coming soon...</p>
-                  </div>
+                  <Exams />
                 </Layout>
               }
             />
@@ -80,10 +80,7 @@ const App = () => (
               path="/forum"
               element={
                 <Layout>
-                  <div className="container py-8">
-                    <h1 className="text-3xl font-bold mb-6">Discussion Forum</h1>
-                    <p className="text-gray-500">This feature is coming soon...</p>
-                  </div>
+                  <Forum />
                 </Layout>
               }
             />
@@ -91,10 +88,7 @@ const App = () => (
               path="/settings"
               element={
                 <Layout>
-                  <div className="container py-8">
-                    <h1 className="text-3xl font-bold mb-6">Settings</h1>
-                    <p className="text-gray-500">This feature is coming soon...</p>
-                  </div>
+                  <Settings />
                 </Layout>
               }
             />

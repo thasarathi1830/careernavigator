@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const [editMode, setEditMode] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Mock student data
-  const student = {
+  // Student profile state
+  const [studentProfile, setStudentProfile] = useState({
     id: "S12345",
     name: "John Doe",
-    email: "john.doe@university.edu",
+    email: user?.email || "john.doe@university.edu",
     phone: "+1 (555) 123-4567",
     dob: "1998-06-15",
     address: "123 Campus Drive, University City, CA 94102",
@@ -24,6 +29,55 @@ const Profile = () => {
     gpa: 3.75,
     bio: "Enthusiastic computer science student with a passion for AI and machine learning. Looking for internship opportunities in software development.",
     skills: ["JavaScript", "Python", "React", "Node.js", "Machine Learning"],
+  });
+
+  // New skill input state
+  const [newSkill, setNewSkill] = useState("");
+
+  // Load profile data if user is logged in
+  useEffect(() => {
+    if (user) {
+      // If you have a profiles table connected to the user, you could fetch additional profile data here
+      setStudentProfile(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        name: user.user_metadata?.full_name || prev.name
+      }));
+    }
+  }, [user]);
+
+  const handleSaveProfile = () => {
+    // Here you would typically save the profile to your database
+    toast({
+      title: "Profile Updated",
+      description: "Your profile has been successfully updated.",
+    });
+    setEditMode(false);
+  };
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() !== "" && !studentProfile.skills.includes(newSkill)) {
+      setStudentProfile({
+        ...studentProfile,
+        skills: [...studentProfile.skills, newSkill],
+      });
+      setNewSkill("");
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove) => {
+    setStudentProfile({
+      ...studentProfile,
+      skills: studentProfile.skills.filter(skill => skill !== skillToRemove),
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setStudentProfile({
+      ...studentProfile,
+      [id]: value,
+    });
   };
 
   return (
@@ -36,9 +90,9 @@ const Profile = () => {
             <div className="flex flex-col items-center">
               <div className="relative mb-4 group">
                 <Avatar className="h-32 w-32">
-                  <AvatarImage src="" alt={student.name} />
+                  <AvatarImage src="" alt={studentProfile.name} />
                   <AvatarFallback className="text-3xl bg-education-primary text-white">
-                    {student.name
+                    {studentProfile.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
@@ -48,18 +102,18 @@ const Profile = () => {
                   <span className="text-white text-sm">Change Photo</span>
                 </div>
               </div>
-              <h2 className="text-xl font-bold">{student.name}</h2>
-              <p className="text-gray-500 text-sm mb-4">{student.id}</p>
+              <h2 className="text-xl font-bold">{studentProfile.name}</h2>
+              <p className="text-gray-500 text-sm mb-4">{studentProfile.id}</p>
               <div className="text-center mb-6">
                 <div className="text-sm font-medium text-gray-700">
-                  {student.major}
+                  {studentProfile.major}
                 </div>
-                <div className="text-sm text-gray-500">{student.year} Year</div>
+                <div className="text-sm text-gray-500">{studentProfile.year} Year</div>
               </div>
               <div className="w-full">
                 <Button
                   className="w-full mb-3"
-                  onClick={() => setEditMode(!editMode)}
+                  onClick={() => editMode ? handleSaveProfile() : setEditMode(true)}
                 >
                   {editMode ? "Save Profile" : "Edit Profile"}
                 </Button>
@@ -93,11 +147,12 @@ const Profile = () => {
                       {editMode ? (
                         <Input
                           id="name"
-                          defaultValue={student.name}
+                          value={studentProfile.name}
+                          onChange={handleInputChange}
                           className="bg-white"
                         />
                       ) : (
-                        <div className="text-gray-700 py-2">{student.name}</div>
+                        <div className="text-gray-700 py-2">{studentProfile.name}</div>
                       )}
                     </div>
 
@@ -107,11 +162,13 @@ const Profile = () => {
                         <Input
                           id="email"
                           type="email"
-                          defaultValue={student.email}
+                          value={studentProfile.email}
+                          onChange={handleInputChange}
                           className="bg-white"
+                          disabled={!!user} // Disable if connected to auth user
                         />
                       ) : (
-                        <div className="text-gray-700 py-2">{student.email}</div>
+                        <div className="text-gray-700 py-2">{studentProfile.email}</div>
                       )}
                     </div>
 
@@ -120,11 +177,12 @@ const Profile = () => {
                       {editMode ? (
                         <Input
                           id="phone"
-                          defaultValue={student.phone}
+                          value={studentProfile.phone}
+                          onChange={handleInputChange}
                           className="bg-white"
                         />
                       ) : (
-                        <div className="text-gray-700 py-2">{student.phone}</div>
+                        <div className="text-gray-700 py-2">{studentProfile.phone}</div>
                       )}
                     </div>
 
@@ -134,12 +192,13 @@ const Profile = () => {
                         <Input
                           id="dob"
                           type="date"
-                          defaultValue={student.dob}
+                          value={studentProfile.dob}
+                          onChange={handleInputChange}
                           className="bg-white"
                         />
                       ) : (
                         <div className="text-gray-700 py-2">
-                          {new Date(student.dob).toLocaleDateString()}
+                          {new Date(studentProfile.dob).toLocaleDateString()}
                         </div>
                       )}
                     </div>
@@ -149,12 +208,13 @@ const Profile = () => {
                       {editMode ? (
                         <Input
                           id="address"
-                          defaultValue={student.address}
+                          value={studentProfile.address}
+                          onChange={handleInputChange}
                           className="bg-white"
                         />
                       ) : (
                         <div className="text-gray-700 py-2">
-                          {student.address}
+                          {studentProfile.address}
                         </div>
                       )}
                     </div>
@@ -165,11 +225,12 @@ const Profile = () => {
                         <Textarea
                           id="bio"
                           rows={4}
-                          defaultValue={student.bio}
+                          value={studentProfile.bio}
+                          onChange={handleInputChange}
                           className="resize-none bg-white"
                         />
                       ) : (
-                        <div className="text-gray-700 py-2">{student.bio}</div>
+                        <div className="text-gray-700 py-2">{studentProfile.bio}</div>
                       )}
                     </div>
                   </div>
@@ -181,24 +242,37 @@ const Profile = () => {
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Skills</h3>
                     {editMode && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-education-primary border-education-primary"
-                      >
-                        Add Skill
-                      </Button>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add new skill"
+                          value={newSkill}
+                          onChange={(e) => setNewSkill(e.target.value)}
+                          className="w-48"
+                          onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddSkill}
+                          className="text-education-primary border-education-primary"
+                        >
+                          Add
+                        </Button>
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {student.skills.map((skill, index) => (
+                    {studentProfile.skills.map((skill, index) => (
                       <div
                         key={index}
                         className="bg-education-light text-education-primary px-3 py-1 rounded-full text-sm font-medium"
                       >
                         {skill}
                         {editMode && (
-                          <button className="ml-2 text-education-danger hover:text-red-600">
+                          <button 
+                            className="ml-2 text-education-danger hover:text-red-600"
+                            onClick={() => handleRemoveSkill(skill)}
+                          >
                             ×
                           </button>
                         )}
