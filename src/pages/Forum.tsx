@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Forum = () => {
+  const { user } = useAuth();
   const [discussions, setDiscussions] = useState([
     {
       id: 1,
@@ -68,8 +69,8 @@ const Forum = () => {
       {
         id,
         title: newPost.title,
-        author: "Current User",
-        authorInitials: "CU",
+        author: user?.user_metadata?.full_name || user?.email || "Anonymous User",
+        authorInitials: (user?.user_metadata?.full_name || "AU").split(" ").map((n) => n[0]).join(""),
         content: newPost.content,
         date: new Date().toISOString().split('T')[0],
         replies: 0,

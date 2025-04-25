@@ -9,14 +9,30 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Trash2 } from "lucide-react";
 
 const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const [newSkill, setNewSkill] = useState("");
+  const [certifications, setCertifications] = useState([
+    {
+      id: 1,
+      name: "AWS Certified Solutions Architect",
+      issuer: "Amazon Web Services",
+      issueDate: "2025-01",
+      expiryDate: "2028-01"
+    },
+    {
+      id: 2,
+      name: "Machine Learning Specialization",
+      issuer: "Stanford University & Coursera",
+      issueDate: "2024-11",
+      expiryDate: null
+    }
+  ]);
 
-  // Student profile state
   const [studentProfile, setStudentProfile] = useState({
     id: "S12345",
     name: "John Doe",
@@ -44,15 +60,12 @@ const Profile = () => {
     ]
   });
 
-  // New states for editing
   const [newCourse, setNewCourse] = useState({ code: "", name: "", credits: "", grade: "" });
   const [newProject, setNewProject] = useState({ name: "", status: "In Progress", deadline: "" });
   const [newJobApplication, setNewJobApplication] = useState({ role: "", company: "", status: "Applied" });
 
-  // Load profile data if user is logged in
   useEffect(() => {
     if (user) {
-      // If you have a profiles table connected to the user, you could fetch additional profile data here
       setStudentProfile(prev => ({
         ...prev,
         email: user.email || prev.email,
@@ -62,7 +75,6 @@ const Profile = () => {
   }, [user]);
 
   const handleSaveProfile = () => {
-    // Here you would typically save the profile to your database
     toast({
       title: "Profile Updated",
       description: "Your profile has been successfully updated.",
@@ -144,6 +156,10 @@ const Profile = () => {
       ...prev,
       jobApplications: prev.jobApplications.filter(app => app.id !== applicationId)
     }));
+  };
+
+  const handleRemoveCertification = (id: number) => {
+    setCertifications(certifications.filter(cert => cert.id !== id));
   };
 
   return (
@@ -566,79 +582,53 @@ const Profile = () => {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 bg-education-light rounded-md text-education-primary">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-8 h-8"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"
-                            />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">AWS Certified Solutions Architect</h4>
-                          <p className="text-sm text-gray-500 mt-1">Amazon Web Services</p>
-                          <div className="flex justify-between mt-2">
-                            <span className="text-sm text-gray-500">
-                              Issued: Jan 2025 • Expires: Jan 2028
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-education-primary border-education-primary"
+                    {certifications.map((cert) => (
+                      <div key={cert.id} className="border rounded-lg p-4">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 bg-education-light rounded-md text-education-primary">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-8 h-8"
                             >
-                              View
-                            </Button>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">{cert.name}</h4>
+                            <p className="text-sm text-gray-500 mt-1">{cert.issuer}</p>
+                            <div className="flex justify-between mt-2">
+                              <span className="text-sm text-gray-500">
+                                Issued: {cert.issueDate} {cert.expiryDate ? `• Expires: ${cert.expiryDate}` : ''}
+                              </span>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-education-primary border-education-primary"
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveCertification(cert.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 bg-education-light rounded-md text-education-primary">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-8 h-8"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"
-                            />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">Machine Learning Specialization</h4>
-                          <p className="text-sm text-gray-500 mt-1">Stanford University & Coursera</p>
-                          <div className="flex justify-between mt-2">
-                            <span className="text-sm text-gray-500">
-                              Issued: Nov 2024
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-education-primary border-education-primary"
-                            >
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

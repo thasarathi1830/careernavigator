@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Check, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const Exams = () => {
   const [assignments, setAssignments] = useState([
@@ -36,7 +38,8 @@ const Exams = () => {
       course: "Data Structures", 
       type: "Exam",
       dueDate: "2025-05-10", 
-      status: "Upcoming" 
+      status: "Upcoming",
+      completed: false
     },
     { 
       id: 2, 
@@ -44,7 +47,8 @@ const Exams = () => {
       course: "Web Technologies", 
       type: "Assignment",
       dueDate: "2025-04-28", 
-      status: "In Progress" 
+      status: "In Progress",
+      completed: false
     },
     { 
       id: 3, 
@@ -52,7 +56,8 @@ const Exams = () => {
       course: "Algorithms", 
       type: "Assignment",
       dueDate: "2025-04-26", 
-      status: "Submitted" 
+      status: "Submitted",
+      completed: false
     }
   ]);
   
@@ -102,7 +107,17 @@ const Exams = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
-  
+
+  const handleDeleteAssignment = (id: number) => {
+    setAssignments(assignments.filter(a => a.id !== id));
+  };
+
+  const handleToggleComplete = (id: number) => {
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, completed: !a.completed, status: !a.completed ? 'Completed' : 'In Progress' } : a
+    ));
+  };
+
   return (
     <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
@@ -216,13 +231,15 @@ const Exams = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className="w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {assignments.map(assignment => (
                 <TableRow key={assignment.id}>
-                  <TableCell className="font-medium">{assignment.name}</TableCell>
+                  <TableCell className={cn("font-medium", assignment.completed && "line-through opacity-70")}>
+                    {assignment.name}
+                  </TableCell>
                   <TableCell>{assignment.course}</TableCell>
                   <TableCell>{assignment.type}</TableCell>
                   <TableCell>{new Date(assignment.dueDate).toLocaleDateString()}</TableCell>
@@ -232,7 +249,22 @@ const Exams = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">View</Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleToggleComplete(assignment.id)}
+                      >
+                        <Check className={cn("h-4 w-4", assignment.completed ? "text-green-500" : "text-gray-500")} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteAssignment(assignment.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
