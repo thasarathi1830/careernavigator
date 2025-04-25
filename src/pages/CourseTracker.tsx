@@ -29,10 +29,16 @@ const CourseTracker = () => {
   const { toast } = useToast();
   const [editMode, setEditMode] = useState(false);
   const [semesterGPAs, setSemesterGPAs] = useState([
-    { semester: "Fall 2023", sgpa: 3.4 },
-    { semester: "Spring 2024", sgpa: 3.5 },
-    { semester: "Fall 2024", sgpa: 3.7 },
-    { semester: "Spring 2025", sgpa: 3.75 },
+    { semester: "1st (Odd) Semester", sgpa: 3.4 },
+    { semester: "2nd (Even) Semester", sgpa: 3.5 },
+    { semester: "3rd (Odd) Semester", sgpa: 3.7 },
+    { semester: "4th (Even) Semester", sgpa: 3.75 },
+    { semester: "5th (Odd) Semester", sgpa: 3.8 },
+    { semester: "6th (Even) Semester", sgpa: 3.6 },
+    { semester: "7th (Odd) Semester", sgpa: 3.9 },
+    { semester: "8th (Even) Semester", sgpa: 3.85 },
+    { semester: "9th (Odd) Semester", sgpa: 3.95 },
+    { semester: "10th (Even) Semester", sgpa: 4.0 }
   ]);
   const [newSemester, setNewSemester] = useState({ semester: "", sgpa: "" });
 
@@ -92,10 +98,16 @@ const CourseTracker = () => {
   });
 
   const gpaTrend = [
-    { semester: "Fall 2023", gpa: 3.4 },
-    { semester: "Spring 2024", gpa: 3.5 },
-    { semester: "Fall 2024", gpa: 3.7 },
-    { semester: "Spring 2025", gpa: 3.75 },
+    { semester: "1st (Odd)", gpa: 3.4 },
+    { semester: "2nd (Even)", gpa: 3.5 },
+    { semester: "3rd (Odd)", gpa: 3.7 },
+    { semester: "4th (Even)", gpa: 3.75 },
+    { semester: "5th (Odd)", gpa: 3.8 },
+    { semester: "6th (Even)", gpa: 3.6 },
+    { semester: "7th (Odd)", gpa: 3.9 },
+    { semester: "8th (Even)", gpa: 3.85 },
+    { semester: "9th (Odd)", gpa: 3.95 },
+    { semester: "10th (Even)", gpa: 4.0 }
   ];
 
   const currentCourses = [
