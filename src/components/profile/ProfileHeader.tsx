@@ -30,7 +30,8 @@ export const ProfileHeader = ({
     try {
       setIsUploading(true);
       const fileExt = file.name.split('.').pop();
-      const filePath = `${supabase.auth.user()?.id}/avatar.${fileExt}`;
+      const { data } = await supabase.auth.getUser();
+      const filePath = `${data.user?.id}/avatar.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
