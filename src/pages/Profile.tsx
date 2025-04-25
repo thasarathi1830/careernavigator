@@ -25,13 +25,28 @@ const Profile = () => {
     address: "123 Campus Drive, University City, CA 94102",
     major: "Computer Science",
     year: "Junior",
-    gpa: 3.75,
+    gpa: "3.75",
     bio: "Enthusiastic computer science student with a passion for AI and machine learning. Looking for internship opportunities in software development.",
     skills: ["JavaScript", "Python", "React", "Node.js", "Machine Learning"],
+    courses: [
+      { code: "CS301", name: "Database Systems", credits: 3, grade: "A" },
+      { code: "CS350", name: "Web Development", credits: 4, grade: "A-" },
+      { code: "CS430", name: "Machine Learning", credits: 4, grade: "B+" }
+    ],
+    activeProjects: [
+      { id: 1, name: "Smart Campus Navigation System", status: "In Progress", deadline: "2025-06-15" },
+      { id: 2, name: "Student Health Analysis Dashboard", status: "Completed", completionDate: "2025-03-10" }
+    ],
+    jobApplications: [
+      { id: 1, role: "Software Engineering Intern", company: "TechCorp", status: "Applied" },
+      { id: 2, role: "Junior Data Analyst", company: "DataInsight", status: "In Review" }
+    ]
   });
 
-  // New skill input state
-  const [newSkill, setNewSkill] = useState("");
+  // New states for editing
+  const [newCourse, setNewCourse] = useState({ code: "", name: "", credits: "", grade: "" });
+  const [newProject, setNewProject] = useState({ name: "", status: "In Progress", deadline: "" });
+  const [newJobApplication, setNewJobApplication] = useState({ role: "", company: "", status: "Applied" });
 
   // Load profile data if user is logged in
   useEffect(() => {
@@ -77,6 +92,57 @@ const Profile = () => {
       ...studentProfile,
       [id]: value,
     });
+  };
+
+  const handleAddCourse = () => {
+    if (newCourse.code && newCourse.name && newCourse.credits && newCourse.grade) {
+      setStudentProfile(prev => ({
+        ...prev,
+        courses: [...prev.courses, { ...newCourse, credits: Number(newCourse.credits) }]
+      }));
+      setNewCourse({ code: "", name: "", credits: "", grade: "" });
+    }
+  };
+
+  const handleRemoveCourse = (courseCode: string) => {
+    setStudentProfile(prev => ({
+      ...prev,
+      courses: prev.courses.filter(course => course.code !== courseCode)
+    }));
+  };
+
+  const handleAddProject = () => {
+    if (newProject.name && newProject.deadline) {
+      setStudentProfile(prev => ({
+        ...prev,
+        activeProjects: [...prev.activeProjects, { ...newProject, id: Date.now() }]
+      }));
+      setNewProject({ name: "", status: "In Progress", deadline: "" });
+    }
+  };
+
+  const handleRemoveProject = (projectId: number) => {
+    setStudentProfile(prev => ({
+      ...prev,
+      activeProjects: prev.activeProjects.filter(project => project.id !== projectId)
+    }));
+  };
+
+  const handleAddJobApplication = () => {
+    if (newJobApplication.role && newJobApplication.company) {
+      setStudentProfile(prev => ({
+        ...prev,
+        jobApplications: [...prev.jobApplications, { ...newJobApplication, id: Date.now() }]
+      }));
+      setNewJobApplication({ role: "", company: "", status: "Applied" });
+    }
+  };
+
+  const handleRemoveJobApplication = (applicationId: number) => {
+    setStudentProfile(prev => ({
+      ...prev,
+      jobApplications: prev.jobApplications.filter(app => app.id !== applicationId)
+    }));
   };
 
   return (
@@ -287,30 +353,79 @@ const Profile = () => {
                 <CardContent className="p-6">
                   <h3 className="text-lg font-medium mb-6">Academic Information</h3>
                   <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium">Current Status</h4>
-                      <div className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
-                        Active
-                      </div>
-                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Major</p>
-                        <p className="font-medium">{studentProfile.major}</p>
+                        <Label>Major</Label>
+                        {editMode ? (
+                          <Input
+                            value={studentProfile.major}
+                            onChange={(e) => setStudentProfile(prev => ({ ...prev, major: e.target.value }))}
+                          />
+                        ) : (
+                          <p className="mt-1">{studentProfile.major}</p>
+                        )}
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Year</p>
-                        <p className="font-medium">{studentProfile.year}</p>
+                        <Label>Year</Label>
+                        {editMode ? (
+                          <Input
+                            value={studentProfile.year}
+                            onChange={(e) => setStudentProfile(prev => ({ ...prev, year: e.target.value }))}
+                          />
+                        ) : (
+                          <p className="mt-1">{studentProfile.year}</p>
+                        )}
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">GPA</p>
-                        <p className="font-medium">{studentProfile.gpa}</p>
+                        <Label>GPA</Label>
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="4.0"
+                            value={studentProfile.gpa}
+                            onChange={(e) => setStudentProfile(prev => ({ ...prev, gpa: e.target.value }))}
+                          />
+                        ) : (
+                          <p className="mt-1">{studentProfile.gpa}</p>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <div className="border-t pt-6">
-                    <h4 className="font-medium mb-4">Recent Courses</h4>
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-medium">Courses</h4>
+                      {editMode && (
+                        <div className="flex gap-4 items-end">
+                          <div className="grid grid-cols-4 gap-2">
+                            <Input
+                              placeholder="Code"
+                              value={newCourse.code}
+                              onChange={(e) => setNewCourse(prev => ({ ...prev, code: e.target.value }))}
+                            />
+                            <Input
+                              placeholder="Name"
+                              value={newCourse.name}
+                              onChange={(e) => setNewCourse(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                            <Input
+                              placeholder="Credits"
+                              type="number"
+                              value={newCourse.credits}
+                              onChange={(e) => setNewCourse(prev => ({ ...prev, credits: e.target.value }))}
+                            />
+                            <Input
+                              placeholder="Grade"
+                              value={newCourse.grade}
+                              onChange={(e) => setNewCourse(prev => ({ ...prev, grade: e.target.value }))}
+                            />
+                          </div>
+                          <Button onClick={handleAddCourse}>Add Course</Button>
+                        </div>
+                      )}
+                    </div>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -327,57 +442,43 @@ const Profile = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Grade
                             </th>
+                            {editMode && (
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            )}
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          <tr>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              CS301
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              Database Systems
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              3
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                A
-                              </span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              CS350
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              Web Development
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              4
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                A-
-                              </span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              CS430
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              Machine Learning
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              4
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                B+
-                              </span>
-                            </td>
-                          </tr>
+                          {studentProfile.courses.map((course) => (
+                            <tr key={course.code}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {course.code}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {course.name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {course.credits}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                  {course.grade}
+                                </span>
+                              </td>
+                              {editMode && (
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleRemoveCourse(course.code)}
+                                  >
+                                    Remove
+                                  </Button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -391,93 +492,63 @@ const Profile = () => {
                 <CardContent className="p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-medium">Projects & Research</h3>
-                    <Button className="bg-education-primary hover:bg-education-primary/90">
-                      Add New Project
-                    </Button>
+                    {editMode && (
+                      <div className="flex gap-4 items-end">
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input
+                            placeholder="Project Name"
+                            value={newProject.name}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
+                          />
+                          <Input
+                            type="date"
+                            value={newProject.deadline}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, deadline: e.target.value }))}
+                          />
+                          <select
+                            className="border rounded-md px-3 py-2"
+                            value={newProject.status}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, status: e.target.value }))}
+                          >
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </div>
+                        <Button onClick={handleAddProject}>Add Project</Button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-6">
-                    <div className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-lg font-medium">
-                            Smart Campus Navigation System
-                          </h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            An AI-powered mobile app for campus navigation with accessibility features
-                          </p>
-                        </div>
-                        <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-medium">
-                          In Progress
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                          React Native
-                        </div>
-                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                          Tensorflow
-                        </div>
-                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                          Google Maps API
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex justify-between items-center">
-                        <div className="text-sm text-gray-500">
-                          Deadline: June 15, 2025
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-education-primary border-education-primary"
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-lg font-medium">
-                            Student Health Analysis Dashboard
-                          </h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Data visualization tool to track student health and wellness metrics
-                          </p>
-                        </div>
-                        <div className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
-                          Completed
+                    {studentProfile.activeProjects.map((project) => (
+                      <div key={project.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-lg font-medium">{project.name}</h4>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {project.status === "Completed" 
+                                ? `Completed: ${new Date(project.completionDate).toLocaleDateString()}`
+                                : `Deadline: ${new Date(project.deadline).toLocaleDateString()}`
+                              }
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className={`bg-${project.status === "Completed" ? "green" : "yellow"}-100 text-${project.status === "Completed" ? "green" : "yellow"}-800 text-xs px-3 py-1 rounded-full font-medium`}>
+                              {project.status}
+                            </div>
+                            {editMode && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveProject(project.id)}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                          React
-                        </div>
-                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                          D3.js
-                        </div>
-                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                          Node.js
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex justify-between items-center">
-                        <div className="text-sm text-gray-500">
-                          Completed: March 10, 2025
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-education-primary border-education-primary"
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
