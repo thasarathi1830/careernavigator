@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   BarChart,
@@ -21,19 +21,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 const CourseTracker = () => {
-  // Mock data for course grades
-  const courseGrades = [
-    { name: "CS101", grade: "A", points: 4.0 },
-    { name: "CS201", grade: "B+", points: 3.3 },
-    { name: "MATH241", grade: "A-", points: 3.7 },
-    { name: "PHYS101", grade: "B", points: 3.0 },
-    { name: "ENG110", grade: "A", points: 4.0 },
-    { name: "CS301", grade: "A", points: 4.0 },
-    { name: "CS350", grade: "A-", points: 3.7 },
-    { name: "CS430", grade: "B+", points: 3.3 },
-  ];
+  const { toast } = useToast();
+  const [editMode, setEditMode] = useState(false);
+  const [cgpa, setCgpa] = useState("3.75");
+
+  // Mock data for course grades with marks obtained
+  const [courseGrades, setCourseGrades] = useState([
+    { name: "CS101", grade: "A", points: 4.0, marksObtained: 92, totalMarks: 100 },
+    { name: "CS201", grade: "B+", points: 3.3, marksObtained: 85, totalMarks: 100 },
+    { name: "MATH241", grade: "A-", points: 3.7, marksObtained: 88, totalMarks: 100 },
+    { name: "PHYS101", grade: "B", points: 3.0, marksObtained: 78, totalMarks: 100 },
+    { name: "ENG110", grade: "A", points: 4.0, marksObtained: 94, totalMarks: 100 },
+    { name: "CS301", grade: "A", points: 4.0, marksObtained: 95, totalMarks: 100 },
+    { name: "CS350", grade: "A-", points: 3.7, marksObtained: 87, totalMarks: 100 },
+    { name: "CS430", grade: "B+", points: 3.3, marksObtained: 83, totalMarks: 100 },
+  ]);
+
+  const [newCourse, setNewCourse] = useState({
+    name: "",
+    grade: "",
+    points: 0,
+    marksObtained: "",
+    totalMarks: "100"
+  });
 
   // Mock data for GPA trend
   const gpaTrend = [
@@ -108,14 +123,94 @@ const CourseTracker = () => {
     }
   };
 
+  const handleAddCourse = () => {
+    if (newCourse.name && newCourse.grade && newCourse.marksObtained) {
+      setCourseGrades([...courseGrades, {
+        ...newCourse,
+        points: calculatePoints(newCourse.grade),
+        marksObtained: Number(newCourse.marksObtained),
+        totalMarks: Number(newCourse.totalMarks)
+      }]);
+      setNewCourse({
+        name: "",
+        grade: "",
+        points: 0,
+        marksObtained: "",
+        totalMarks: "100"
+      });
+      toast({
+        title: "Course Added",
+        description: "The new course has been added successfully."
+      });
+    }
+  };
+
+  const handleUpdateCourse = (index: number, field: string, value: string) => {
+    const updatedCourses = [...courseGrades];
+    updatedCourses[index] = {
+      ...updatedCourses[index],
+      [field]: field === 'marksObtained' ? Number(value) : value,
+      points: field === 'grade' ? calculatePoints(value) : updatedCourses[index].points
+    };
+    setCourseGrades(updatedCourses);
+    updateCGPA(updatedCourses);
+  };
+
+  const calculatePoints = (grade: string): number => {
+    const gradePoints: { [key: string]: number } = {
+      'A': 4.0,
+      'A-': 3.7,
+      'B+': 3.3,
+      'B': 3.0,
+      'B-': 2.7,
+      'C+': 2.3,
+      'C': 2.0,
+      'C-': 1.7,
+      'D+': 1.3,
+      'D': 1.0,
+      'F': 0.0
+    };
+    return gradePoints[grade] || 0;
+  };
+
+  const updateCGPA = (courses: typeof courseGrades) => {
+    const totalPoints = courses.reduce((sum, course) => sum + course.points, 0);
+    const newCGPA = (totalPoints / courses.length).toFixed(2);
+    setCgpa(newCGPA);
+  };
+
+  const handleRemoveCourse = (index: number) => {
+    const updatedCourses = courseGrades.filter((_, i) => i !== index);
+    setCourseGrades(updatedCourses);
+    updateCGPA(updatedCourses);
+    toast({
+      title: "Course Removed",
+      description: "The course has been removed successfully."
+    });
+  };
+
   return (
     <div className="container py-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <h1 className="text-3xl font-bold">Course Tracker</h1>
         <div className="flex items-center mt-4 md:mt-0 space-x-4">
           <div>
-            <span className="text-sm text-gray-500">Current GPA</span>
-            <div className="text-2xl font-bold text-education-primary">3.75</div>
+            <span className="text-sm text-gray-500">Current CGPA</span>
+            <div className="flex items-center gap-2">
+              {editMode ? (
+                <Input
+                  type="number"
+                  value={cgpa}
+                  onChange={(e) => setCgpa(e.target.value)}
+                  className="w-20 text-2xl font-bold"
+                  step="0.01"
+                  min="0"
+                  max="4.0"
+                />
+              ) : (
+                <div className="text-2xl font-bold text-education-primary">{cgpa}</div>
+              )}
+            </div>
           </div>
           <div>
             <span className="text-sm text-gray-500">Credits Earned</span>
@@ -126,6 +221,13 @@ const CourseTracker = () => {
             <div className="text-2xl font-bold text-education-primary">66</div>
           </div>
         </div>
+        <Button 
+          onClick={() => setEditMode(!editMode)}
+          variant="outline"
+          className="ml-4"
+        >
+          {editMode ? "Save Changes" : "Edit Courses"}
+        </Button>
       </div>
 
       <Tabs defaultValue="current">
@@ -201,20 +303,46 @@ const CourseTracker = () => {
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Past Courses</h3>
-                <div className="flex items-center space-x-2">
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select Semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Semesters</SelectItem>
-                      <SelectItem value="spring2025">Spring 2025</SelectItem>
-                      <SelectItem value="fall2024">Fall 2024</SelectItem>
-                      <SelectItem value="spring2024">Spring 2024</SelectItem>
-                      <SelectItem value="fall2023">Fall 2023</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {editMode && (
+                  <div className="flex gap-4 items-end">
+                    <div className="grid grid-cols-5 gap-2">
+                      <Input
+                        placeholder="Course Code"
+                        value={newCourse.name}
+                        onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                      />
+                      <Select 
+                        value={newCourse.grade}
+                        onValueChange={(value) => setNewCourse({ ...newCourse, grade: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'].map((grade) => (
+                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        placeholder="Marks"
+                        type="number"
+                        value={newCourse.marksObtained}
+                        onChange={(e) => setNewCourse({ ...newCourse, marksObtained: e.target.value })}
+                        min="0"
+                        max={newCourse.totalMarks}
+                      />
+                      <Input
+                        placeholder="Total Marks"
+                        type="number"
+                        value={newCourse.totalMarks}
+                        onChange={(e) => setNewCourse({ ...newCourse, totalMarks: e.target.value })}
+                        min="0"
+                      />
+                      <Button onClick={handleAddCourse}>Add</Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="overflow-x-auto">
@@ -222,57 +350,96 @@ const CourseTracker = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Code
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Course Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Semester
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Credits
+                        Course Code
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Grade
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Marks
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Points
+                      </th>
+                      {editMode && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {courseGrades.map((course, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {course.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {course.name === "CS101" && "Introduction to Programming"}
-                          {course.name === "CS201" && "Data Structures"}
-                          {course.name === "MATH241" && "Calculus III"}
-                          {course.name === "PHYS101" && "Physics I"}
-                          {course.name === "ENG110" && "English Composition"}
-                          {course.name === "CS301" && "Database Systems"}
-                          {course.name === "CS350" && "Web Development"}
-                          {course.name === "CS430" && "Machine Learning"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {index < 2
-                            ? "Fall 2023"
-                            : index < 5
-                            ? "Spring 2024"
-                            : "Fall 2024"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {index === 2 || index === 3 ? 3 : 4}
+                          {editMode ? (
+                            <Input
+                              value={course.name}
+                              onChange={(e) => handleUpdateCourse(index, 'name', e.target.value)}
+                            />
+                          ) : (
+                            course.name
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getGradeColor(
-                              course.grade
-                            )}`}
-                          >
-                            {course.grade}
-                          </span>
+                          {editMode ? (
+                            <Select
+                              value={course.grade}
+                              onValueChange={(value) => handleUpdateCourse(index, 'grade', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue>{course.grade}</SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'].map((grade) => (
+                                  <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getGradeColor(course.grade)}`}>
+                              {course.grade}
+                            </span>
+                          )}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {editMode ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={course.marksObtained}
+                                onChange={(e) => handleUpdateCourse(index, 'marksObtained', e.target.value)}
+                                className="w-20"
+                                min="0"
+                                max={course.totalMarks}
+                              />
+                              <span>/</span>
+                              <Input
+                                type="number"
+                                value={course.totalMarks}
+                                onChange={(e) => handleUpdateCourse(index, 'totalMarks', e.target.value)}
+                                className="w-20"
+                                min="0"
+                              />
+                            </div>
+                          ) : (
+                            `${course.marksObtained}/${course.totalMarks}`
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {course.points.toFixed(1)}
+                        </td>
+                        {editMode && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveCourse(index)}
+                            >
+                              Remove
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
