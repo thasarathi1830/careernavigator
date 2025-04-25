@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -13,12 +12,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, MapPin, Calendar, Building, Search, Filter } from "lucide-react";
+import { Briefcase, MapPin, Calendar, Building, Search, Filter, Download } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const JobPortal = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const resumeRef = useRef(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
   
-  // Mock job listings data
   const jobs = [
     {
       id: 1,
@@ -124,6 +128,59 @@ const JobPortal = () => {
     job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
     job.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const handleDownloadResume = async () => {
+    if (!resumeRef.current) return;
+    
+    setIsDownloading(true);
+    toast({
+      title: "Preparing Resume",
+      description: "Your resume is being generated...",
+    });
+
+    try {
+      const resumeElement = resumeRef.current;
+      const canvas = await html2canvas(resumeElement, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save("Student_Resume.pdf");
+      
+      toast({
+        title: "Resume Downloaded",
+        description: "Your resume has been successfully downloaded.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading your resume. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handlePreviewResume = () => {
+    toast({
+      title: "Resume Preview",
+      description: "This feature will open a preview of your resume in a new window.",
+    });
+  };
 
   return (
     <div className="container py-8 animate-fade-in">
@@ -300,14 +357,19 @@ const JobPortal = () => {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">Resume Builder</h2>
                   <div className="flex gap-2">
-                    <Button variant="outline">Preview</Button>
-                    <Button className="bg-education-primary hover:bg-education-primary/90">
-                      Download PDF
+                    <Button variant="outline" onClick={handlePreviewResume}>Preview</Button>
+                    <Button 
+                      className="bg-education-primary hover:bg-education-primary/90 flex items-center gap-2"
+                      onClick={handleDownloadResume}
+                      disabled={isDownloading}
+                    >
+                      <Download size={16} />
+                      {isDownloading ? "Generating..." : "Download PDF"}
                     </Button>
                   </div>
                 </div>
                 
-                <div className="space-y-6">
+                <div className="space-y-6" ref={resumeRef}>
                   <div>
                     <h3 className="font-medium mb-3">Personal Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

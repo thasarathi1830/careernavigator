@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const [newSkill, setNewSkill] = useState("");
+  const resumeRef = useRef(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  
   const [certifications, setCertifications] = useState([
     {
       id: 1,
@@ -162,6 +167,52 @@ const Profile = () => {
     setCertifications(certifications.filter(cert => cert.id !== id));
   };
 
+  const handleDownloadResume = async () => {
+    if (!resumeRef.current) return;
+    
+    setIsDownloading(true);
+    toast({
+      title: "Preparing Resume",
+      description: "Your resume is being generated...",
+    });
+
+    try {
+      const resumeElement = resumeRef.current;
+      const canvas = await html2canvas(resumeElement, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${studentProfile.name.replace(/\s+/g, '_')}_Resume.pdf`);
+      
+      toast({
+        title: "Resume Downloaded",
+        description: "Your resume has been successfully downloaded.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading your resume. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Student Profile</h1>
@@ -201,16 +252,19 @@ const Profile = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full border-education-primary text-education-primary hover:bg-education-light"
+                  className="w-full border-education-primary text-education-primary hover:bg-education-light flex items-center justify-center gap-2"
+                  onClick={handleDownloadResume}
+                  disabled={isDownloading}
                 >
-                  Download Resume
+                  <Download size={16} />
+                  {isDownloading ? "Generating..." : "Download Resume"}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3" ref={resumeRef}>
           <Tabs defaultValue="info">
             <TabsList className="grid grid-cols-4 mb-8">
               <TabsTrigger value="info">Basic Info</TabsTrigger>
