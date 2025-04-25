@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
@@ -12,23 +13,8 @@ import JobPortal from "./pages/JobPortal";
 import Projects from "./pages/Projects";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" />;
-  }
-
-  return children;
-}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -42,51 +28,41 @@ const App = () => (
             <Route
               path="/"
               element={
-                <PrivateRoute>
-                  <Layout>
-                    <Index />
-                  </Layout>
-                </PrivateRoute>
+                <Layout>
+                  <Index />
+                </Layout>
               }
             />
             <Route
               path="/profile"
               element={
-                <PrivateRoute>
-                  <Layout>
-                    <Profile />
-                  </Layout>
-                </PrivateRoute>
+                <Layout>
+                  <Profile />
+                </Layout>
               }
             />
             <Route
               path="/course-tracker"
               element={
-                <PrivateRoute>
-                  <Layout>
-                    <CourseTracker />
-                  </Layout>
-                </PrivateRoute>
+                <Layout>
+                  <CourseTracker />
+                </Layout>
               }
             />
             <Route
               path="/job-portal"
               element={
-                <PrivateRoute>
-                  <Layout>
-                    <JobPortal />
-                  </Layout>
-                </PrivateRoute>
+                <Layout>
+                  <JobPortal />
+                </Layout>
               }
             />
             <Route
               path="/projects"
               element={
-                <PrivateRoute>
-                  <Layout>
-                    <Projects />
-                  </Layout>
-                </PrivateRoute>
+                <Layout>
+                  <Projects />
+                </Layout>
               }
             />
             <Route
