@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -266,429 +265,96 @@ const Profile = () => {
         </Card>
 
         <div className="lg:col-span-3" ref={resumeRef}>
-          <Tabs defaultValue="info">
-            <TabsList className="grid grid-cols-4 mb-8">
-              <TabsTrigger value="info">Basic Info</TabsTrigger>
-              <TabsTrigger value="academic">Academic</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="certifications">Certifications</TabsTrigger>
-            </TabsList>
+          <div className="bg-white p-8 rounded-lg shadow-sm">
+            <div className="border-b pb-6 mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">{studentProfile.name}</h1>
+              <div className="mt-2 text-gray-600 space-y-1">
+                <p>{studentProfile.email}</p>
+                <p>{studentProfile.phone}</p>
+                <p>{studentProfile.address}</p>
+              </div>
+            </div>
 
-            <TabsContent value="info" className="space-y-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-4">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      {editMode ? (
-                        <Input
-                          id="name"
-                          value={studentProfile.name}
-                          onChange={handleInputChange}
-                          className="bg-white"
-                        />
-                      ) : (
-                        <div className="text-gray-700 py-2">{studentProfile.name}</div>
-                      )}
-                    </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-3">Professional Summary</h2>
+              <p className="text-gray-600 leading-relaxed">{studentProfile.bio}</p>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      {editMode ? (
-                        <Input
-                          id="email"
-                          type="email"
-                          value={studentProfile.email}
-                          onChange={handleInputChange}
-                          className="bg-white"
-                          disabled={!!user} // Disable if connected to auth user
-                        />
-                      ) : (
-                        <div className="text-gray-700 py-2">{studentProfile.email}</div>
-                      )}
-                    </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-3">Education</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-gray-900">University Name</h3>
+                  <p className="text-gray-600">{studentProfile.major} • {studentProfile.year} Year</p>
+                  <p className="text-gray-600">CGPA: {studentProfile.gpa}</p>
+                </div>
+              </div>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      {editMode ? (
-                        <Input
-                          id="phone"
-                          value={studentProfile.phone}
-                          onChange={handleInputChange}
-                          className="bg-white"
-                        />
-                      ) : (
-                        <div className="text-gray-700 py-2">{studentProfile.phone}</div>
-                      )}
-                    </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-3">Skills</h2>
+              <div className="flex flex-wrap gap-2">
+                {studentProfile.skills.map((skill, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="dob">Date of Birth</Label>
-                      {editMode ? (
-                        <Input
-                          id="dob"
-                          type="date"
-                          value={studentProfile.dob}
-                          onChange={handleInputChange}
-                          className="bg-white"
-                        />
-                      ) : (
-                        <div className="text-gray-700 py-2">
-                          {new Date(studentProfile.dob).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="address">Address</Label>
-                      {editMode ? (
-                        <Input
-                          id="address"
-                          value={studentProfile.address}
-                          onChange={handleInputChange}
-                          className="bg-white"
-                        />
-                      ) : (
-                        <div className="text-gray-700 py-2">
-                          {studentProfile.address}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      {editMode ? (
-                        <Textarea
-                          id="bio"
-                          rows={4}
-                          value={studentProfile.bio}
-                          onChange={handleInputChange}
-                          className="resize-none bg-white"
-                        />
-                      ) : (
-                        <div className="text-gray-700 py-2">{studentProfile.bio}</div>
-                      )}
-                    </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-3">Projects</h2>
+              <div className="space-y-4">
+                {studentProfile.activeProjects.map((project) => (
+                  <div key={project.id}>
+                    <h3 className="font-medium text-gray-900">{project.name}</h3>
+                    <p className="text-gray-600">
+                      Status: {project.status} • 
+                      {project.status === "Completed" 
+                        ? ` Completed: ${new Date(project.completionDate).toLocaleDateString()}`
+                        : ` Due: ${new Date(project.deadline).toLocaleDateString()}`
+                      }
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
+            </div>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium">Skills</h3>
-                    {editMode && (
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add new skill"
-                          value={newSkill}
-                          onChange={(e) => setNewSkill(e.target.value)}
-                          className="w-48"
-                          onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAddSkill}
-                          className="text-education-primary border-education-primary"
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    )}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-3">Certifications</h2>
+              <div className="space-y-4">
+                {certifications.map((cert) => (
+                  <div key={cert.id}>
+                    <h3 className="font-medium text-gray-900">{cert.name}</h3>
+                    <p className="text-gray-600">
+                      {cert.issuer} • Issued: {cert.issueDate}
+                      {cert.expiryDate && ` • Expires: ${cert.expiryDate}`}
+                    </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {studentProfile.skills.map((skill, index) => (
-                      <div
-                        key={index}
-                        className="bg-education-light text-education-primary px-3 py-1 rounded-full text-sm font-medium"
-                      >
-                        {skill}
-                        {editMode && (
-                          <button 
-                            className="ml-2 text-education-danger hover:text-red-600"
-                            onClick={() => handleRemoveSkill(skill)}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                ))}
+              </div>
+            </div>
 
-            <TabsContent value="academic">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-6">Academic Information</h3>
-                  <div className="mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <Label>Major</Label>
-                        {editMode ? (
-                          <Input
-                            value={studentProfile.major}
-                            onChange={(e) => setStudentProfile(prev => ({ ...prev, major: e.target.value }))}
-                          />
-                        ) : (
-                          <p className="mt-1">{studentProfile.major}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Year</Label>
-                        {editMode ? (
-                          <Input
-                            value={studentProfile.year}
-                            onChange={(e) => setStudentProfile(prev => ({ ...prev, year: e.target.value }))}
-                          />
-                        ) : (
-                          <p className="mt-1">{studentProfile.year}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label>GPA</Label>
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="4.0"
-                            value={studentProfile.gpa}
-                            onChange={(e) => setStudentProfile(prev => ({ ...prev, gpa: e.target.value }))}
-                          />
-                        ) : (
-                          <p className="mt-1">{studentProfile.gpa}</p>
-                        )}
-                      </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-3">Relevant Coursework</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {studentProfile.courses.map((course) => (
+                  <div key={course.code} className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-gray-900">{course.name}</p>
+                      <p className="text-sm text-gray-600">{course.code}</p>
                     </div>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                      {course.grade}
+                    </span>
                   </div>
-
-                  <div className="border-t pt-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-medium">Courses</h4>
-                      {editMode && (
-                        <div className="flex gap-4 items-end">
-                          <div className="grid grid-cols-4 gap-2">
-                            <Input
-                              placeholder="Code"
-                              value={newCourse.code}
-                              onChange={(e) => setNewCourse(prev => ({ ...prev, code: e.target.value }))}
-                            />
-                            <Input
-                              placeholder="Name"
-                              value={newCourse.name}
-                              onChange={(e) => setNewCourse(prev => ({ ...prev, name: e.target.value }))}
-                            />
-                            <Input
-                              placeholder="Credits"
-                              type="number"
-                              value={newCourse.credits}
-                              onChange={(e) => setNewCourse(prev => ({ ...prev, credits: e.target.value }))}
-                            />
-                            <Input
-                              placeholder="Grade"
-                              value={newCourse.grade}
-                              onChange={(e) => setNewCourse(prev => ({ ...prev, grade: e.target.value }))}
-                            />
-                          </div>
-                          <Button onClick={handleAddCourse}>Add Course</Button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Course Code
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Course Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Credits
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Grade
-                            </th>
-                            {editMode && (
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                              </th>
-                            )}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {studentProfile.courses.map((course) => (
-                            <tr key={course.code}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {course.code}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {course.name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {course.credits}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                  {course.grade}
-                                </span>
-                              </td>
-                              {editMode && (
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleRemoveCourse(course.code)}
-                                  >
-                                    Remove
-                                  </Button>
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="projects">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-medium">Projects & Research</h3>
-                    {editMode && (
-                      <div className="flex gap-4 items-end">
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input
-                            placeholder="Project Name"
-                            value={newProject.name}
-                            onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                          <Input
-                            type="date"
-                            value={newProject.deadline}
-                            onChange={(e) => setNewProject(prev => ({ ...prev, deadline: e.target.value }))}
-                          />
-                          <select
-                            className="border rounded-md px-3 py-2"
-                            value={newProject.status}
-                            onChange={(e) => setNewProject(prev => ({ ...prev, status: e.target.value }))}
-                          >
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                          </select>
-                        </div>
-                        <Button onClick={handleAddProject}>Add Project</Button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    {studentProfile.activeProjects.map((project) => (
-                      <div key={project.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="text-lg font-medium">{project.name}</h4>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {project.status === "Completed" 
-                                ? `Completed: ${new Date(project.completionDate).toLocaleDateString()}`
-                                : `Deadline: ${new Date(project.deadline).toLocaleDateString()}`
-                              }
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className={`bg-${project.status === "Completed" ? "green" : "yellow"}-100 text-${project.status === "Completed" ? "green" : "yellow"}-800 text-xs px-3 py-1 rounded-full font-medium`}>
-                              {project.status}
-                            </div>
-                            {editMode && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleRemoveProject(project.id)}
-                              >
-                                Remove
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="certifications">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-medium">Certifications</h3>
-                    <Button className="bg-education-primary hover:bg-education-primary/90">
-                      Add Certification
-                    </Button>
-                  </div>
-
-                  <div className="space-y-6">
-                    {certifications.map((cert) => (
-                      <div key={cert.id} className="border rounded-lg p-4">
-                        <div className="flex items-start gap-4">
-                          <div className="p-3 bg-education-light rounded-md text-education-primary">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="w-8 h-8"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"
-                              />
-                            </svg>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium">{cert.name}</h4>
-                            <p className="text-sm text-gray-500 mt-1">{cert.issuer}</p>
-                            <div className="flex justify-between mt-2">
-                              <span className="text-sm text-gray-500">
-                                Issued: {cert.issueDate} {cert.expiryDate ? `• Expires: ${cert.expiryDate}` : ''}
-                              </span>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-education-primary border-education-primary"
-                                >
-                                  View
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleRemoveCertification(cert.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
