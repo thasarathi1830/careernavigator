@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -80,7 +79,7 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
         {!collapsed && (
           <span className="font-bold text-lg text-education-primary">
-            AcadPath
+            CareerNavigator
           </span>
         )}
         <button
