@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,72 +28,74 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/"
-              element={
-                <Layout>
-                  <Index />
-                </Layout>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <Layout>
-                  <Profile />
-                </Layout>
-              }
-            />
-            <Route
-              path="/course-tracker"
-              element={
-                <Layout>
-                  <CourseTracker />
-                </Layout>
-              }
-            />
-            <Route
-              path="/job-portal"
-              element={
-                <Layout>
-                  <JobPortal />
-                </Layout>
-              }
-            />
-            <Route
-              path="/projects"
-              element={
-                <Layout>
-                  <Projects />
-                </Layout>
-              }
-            />
-            <Route
-              path="/exams"
-              element={
-                <Layout>
-                  <Exams />
-                </Layout>
-              }
-            />
-            <Route
-              path="/forum"
-              element={
-                <Layout>
-                  <Forum />
-                </Layout>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <Layout>
-                  <Settings />
-                </Layout>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/"
+                element={
+                  <Layout>
+                    <Index />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <Layout>
+                    <Profile />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/course-tracker"
+                element={
+                  <Layout>
+                    <CourseTracker />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/job-portal"
+                element={
+                  <Layout>
+                    <JobPortal />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <Layout>
+                    <Projects />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/exams"
+                element={
+                  <Layout>
+                    <Exams />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/forum"
+                element={
+                  <Layout>
+                    <Forum />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <Layout>
+                    <Settings />
+                  </Layout>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>
