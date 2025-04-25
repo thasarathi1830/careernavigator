@@ -14,6 +14,7 @@ import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Profile = () => {
   const [editMode, setEditMode] = useState(false);
@@ -29,13 +30,15 @@ const Profile = () => {
     courses,
     projects,
     certifications,
-    updateProfile,
     refreshData
   } = useProfileData();
 
   const handleSaveProfile = async () => {
-    await updateProfile(profile);
     setEditMode(false);
+    toast({
+      title: "Profile saved",
+      description: "All changes to your profile have been saved successfully."
+    });
     refreshData();
   };
 
@@ -86,7 +89,27 @@ const Profile = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="container py-8">
+        <h1 className="text-3xl font-bold mb-6">Student Profile</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1">
+            <div className="flex flex-col items-center">
+              <Skeleton className="h-32 w-32 rounded-full" />
+              <Skeleton className="h-6 w-40 mt-4" />
+              <Skeleton className="h-4 w-20 mt-2 mb-4" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <div className="lg:col-span-3">
+            <Skeleton className="h-60 w-full mb-8" />
+            <Skeleton className="h-40 w-full mb-8" />
+            <Skeleton className="h-30 w-full mb-8" />
+            <Skeleton className="h-40 w-full mb-8" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -120,21 +143,47 @@ const Profile = () => {
             email={profile?.email}
             phone={profile?.phone}
             address={profile?.address}
+            isEditMode={editMode}
+            profileId={user?.id || ""}
+            onProfileUpdate={refreshData}
           />
           
           <Education 
             major={profile?.major}
             year={profile?.year}
             gpa={profile?.gpa}
+            isEditMode={editMode}
+            profileId={user?.id || ""}
+            onProfileUpdate={refreshData}
           />
 
-          <Skills skills={skills} />
+          <Skills 
+            skills={skills} 
+            isEditMode={editMode}
+            profileId={user?.id || ""}
+            onSkillsChange={refreshData}
+          />
 
-          <Projects projects={projects} />
+          <Projects 
+            projects={projects} 
+            isEditMode={editMode}
+            profileId={user?.id || ""}
+            onProjectsChange={refreshData}
+          />
 
-          <Certifications certifications={certifications} />
+          <Certifications 
+            certifications={certifications} 
+            isEditMode={editMode}
+            profileId={user?.id || ""}
+            onCertificationsChange={refreshData}
+          />
 
-          <Courses courses={courses} />
+          <Courses 
+            courses={courses} 
+            isEditMode={editMode}
+            profileId={user?.id || ""}
+            onCoursesChange={refreshData}
+          />
         </div>
       </div>
     </div>
