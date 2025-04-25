@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Download } from "lucide-react";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 const Profile = () => {

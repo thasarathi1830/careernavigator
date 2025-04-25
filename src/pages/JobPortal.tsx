@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Briefcase, MapPin, Calendar, Building, Search, Filter, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 const JobPortal = () => {
