@@ -30,8 +30,18 @@ import { Calendar } from "@/components/ui/calendar";
 import { Check, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface Assignment {
+  id: number;
+  name: string;
+  course: string;
+  type: string;
+  dueDate: string;
+  status: string;
+  completed: boolean;
+}
+
 const Exams = () => {
-  const [assignments, setAssignments] = useState([
+  const [assignments, setAssignments] = useState<Assignment[]>([
     { 
       id: 1, 
       name: "Midterm Exam", 
@@ -66,7 +76,8 @@ const Exams = () => {
     course: "",
     type: "Assignment",
     dueDate: "",
-    status: "Upcoming"
+    status: "Upcoming",
+    completed: false
   });
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,7 +90,8 @@ const Exams = () => {
       course: "",
       type: "Assignment",
       dueDate: "",
-      status: "Upcoming"
+      status: "Upcoming",
+      completed: false
     });
     setDialogOpen(false);
   };
@@ -103,6 +115,8 @@ const Exams = () => {
         return "bg-green-100 text-green-800";
       case "Graded":
         return "bg-purple-100 text-purple-800";
+      case "Completed":
+        return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
