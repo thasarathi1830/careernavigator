@@ -28,9 +28,50 @@ import { useToast } from "@/components/ui/use-toast";
 const CourseTracker = () => {
   const { toast } = useToast();
   const [editMode, setEditMode] = useState(false);
+  const [semesterGPAs, setSemesterGPAs] = useState([
+    { semester: "Fall 2023", sgpa: 3.4 },
+    { semester: "Spring 2024", sgpa: 3.5 },
+    { semester: "Fall 2024", sgpa: 3.7 },
+    { semester: "Spring 2025", sgpa: 3.75 },
+  ]);
+  const [newSemester, setNewSemester] = useState({ semester: "", sgpa: "" });
+
+  const calculateCGPA = () => {
+    if (semesterGPAs.length === 0) return "0.00";
+    const totalGPA = semesterGPAs.reduce((sum, sem) => sum + sem.sgpa, 0);
+    return (totalGPA / semesterGPAs.length).toFixed(2);
+  };
+
+  const handleAddSemester = () => {
+    if (newSemester.semester && newSemester.sgpa) {
+      const sgpa = parseFloat(newSemester.sgpa);
+      if (sgpa < 0 || sgpa > 4) {
+        toast({
+          title: "Invalid SGPA",
+          description: "SGPA must be between 0 and 4",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSemesterGPAs([...semesterGPAs, { ...newSemester, sgpa }]);
+      setNewSemester({ semester: "", sgpa: "" });
+      toast({
+        title: "Semester Added",
+        description: "New semester GPA has been added successfully.",
+      });
+    }
+  };
+
+  const handleRemoveSemester = (semesterToRemove: string) => {
+    setSemesterGPAs(semesterGPAs.filter(sem => sem.semester !== semesterToRemove));
+    toast({
+      title: "Semester Removed",
+      description: "The semester has been removed successfully.",
+    });
+  };
+
   const [cgpa, setCgpa] = useState("3.75");
 
-  // Mock data for course grades with marks obtained
   const [courseGrades, setCourseGrades] = useState([
     { name: "CS101", grade: "A", points: 4.0, marksObtained: 92, totalMarks: 100 },
     { name: "CS201", grade: "B+", points: 3.3, marksObtained: 85, totalMarks: 100 },
@@ -50,7 +91,6 @@ const CourseTracker = () => {
     totalMarks: "100"
   });
 
-  // Mock data for GPA trend
   const gpaTrend = [
     { semester: "Fall 2023", gpa: 3.4 },
     { semester: "Spring 2024", gpa: 3.5 },
@@ -58,7 +98,6 @@ const CourseTracker = () => {
     { semester: "Spring 2025", gpa: 3.75 },
   ];
 
-  // Mock data for current courses
   const currentCourses = [
     {
       code: "CS450",
@@ -196,20 +235,8 @@ const CourseTracker = () => {
         <div className="flex items-center mt-4 md:mt-0 space-x-4">
           <div>
             <span className="text-sm text-gray-500">Current CGPA</span>
-            <div className="flex items-center gap-2">
-              {editMode ? (
-                <Input
-                  type="number"
-                  value={cgpa}
-                  onChange={(e) => setCgpa(e.target.value)}
-                  className="w-20 text-2xl font-bold"
-                  step="0.01"
-                  min="0"
-                  max="4.0"
-                />
-              ) : (
-                <div className="text-2xl font-bold text-education-primary">{cgpa}</div>
-              )}
+            <div className="text-2xl font-bold text-education-primary">
+              {calculateCGPA()}
             </div>
           </div>
           <div>
@@ -229,6 +256,55 @@ const CourseTracker = () => {
           {editMode ? "Save Changes" : "Edit Courses"}
         </Button>
       </div>
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Semester GPAs</h3>
+            <div className="flex gap-4">
+              <Input
+                placeholder="Semester (e.g., Fall 2023)"
+                value={newSemester.semester}
+                onChange={(e) => setNewSemester({ ...newSemester, semester: e.target.value })}
+                className="w-48"
+              />
+              <Input
+                type="number"
+                placeholder="SGPA"
+                value={newSemester.sgpa}
+                onChange={(e) => setNewSemester({ ...newSemester, sgpa: e.target.value })}
+                step="0.01"
+                min="0"
+                max="4"
+                className="w-32"
+              />
+              <Button onClick={handleAddSemester}>Add Semester</Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {semesterGPAs.map((sem) => (
+              <Card key={sem.semester} className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-medium">{sem.semester}</h4>
+                    <p className="text-2xl font-bold text-education-primary">
+                      {sem.sgpa.toFixed(2)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleRemoveSemester(sem.semester)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="current">
         <TabsList className="grid w-full grid-cols-3 mb-6">
