@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import Sidebar from "./Sidebar";
-import Header from "./Header";
+import Header from "./Header";  // Change from { Header } to just Header
 
 interface LayoutProps {
   children: React.ReactNode;

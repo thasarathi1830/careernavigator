@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
-export function Header() {
+export default function Header() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
