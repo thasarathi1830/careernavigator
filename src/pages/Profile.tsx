@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -297,15 +296,15 @@ const Profile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Major</p>
-                        <p className="font-medium">{student.major}</p>
+                        <p className="font-medium">{studentProfile.major}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Year</p>
-                        <p className="font-medium">{student.year}</p>
+                        <p className="font-medium">{studentProfile.year}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 mb-1">GPA</p>
-                        <p className="font-medium">{student.gpa}</p>
+                        <p className="font-medium">{studentProfile.gpa}</p>
                       </div>
                     </div>
                   </div>
