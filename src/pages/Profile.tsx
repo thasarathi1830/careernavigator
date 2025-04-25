@@ -35,11 +35,11 @@ const Profile = () => {
 
   const handleSaveProfile = async () => {
     setEditMode(false);
+    await refreshData(); // Make sure to await this
     toast({
       title: "Profile saved",
       description: "All changes to your profile have been saved successfully."
     });
-    refreshData();
   };
 
   const handleDownloadResume = async () => {

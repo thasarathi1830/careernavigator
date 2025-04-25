@@ -50,6 +50,8 @@ export const Education = ({
       if (error) throw error;
       
       setIsEditing(false);
+      
+      // Call this to refresh parent component data
       onProfileUpdate();
       
       toast({
@@ -57,6 +59,7 @@ export const Education = ({
         description: "Your education details have been updated successfully."
       });
     } catch (error: any) {
+      console.error("Error updating education:", error);
       toast({
         title: "Error updating education",
         description: error.message,

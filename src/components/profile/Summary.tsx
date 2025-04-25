@@ -56,6 +56,8 @@ export const Summary = ({
       if (error) throw error;
       
       setIsEditing(false);
+      
+      // Call this to refresh parent component data
       onProfileUpdate();
       
       toast({
@@ -63,6 +65,7 @@ export const Summary = ({
         description: "Your profile information has been updated successfully."
       });
     } catch (error: any) {
+      console.error("Error updating summary:", error);
       toast({
         title: "Error updating profile",
         description: error.message,
@@ -136,9 +139,9 @@ export const Summary = ({
           <>
             <div className="border-b pb-6 mb-6">
               <div className="mt-2 text-gray-600 space-y-1">
-                <p>{email || ""}</p>
-                <p>{phone || ""}</p>
-                <p>{address || ""}</p>
+                <p>{email || "No email provided"}</p>
+                <p>{phone || "No phone provided"}</p>
+                <p>{address || "No address provided"}</p>
               </div>
               
               {isEditMode && !isEditing && (
@@ -155,7 +158,7 @@ export const Summary = ({
 
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-3">Professional Summary</h2>
-              <p className="text-gray-600 leading-relaxed">{bio || ""}</p>
+              <p className="text-gray-600 leading-relaxed">{bio || "No professional summary provided."}</p>
               
               {isEditMode && !isEditing && (
                 <Button 

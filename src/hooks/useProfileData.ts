@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -16,7 +16,7 @@ export const useProfileData = () => {
   const [jobApplications, setJobApplications] = useState<Tables<'job_applications'>[]>([]);
   const [certifications, setCertifications] = useState<Tables<'certifications'>[]>([]);
 
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -26,7 +26,7 @@ export const useProfileData = () => {
       setLoading(true);
       
       const [
-        { data: profileData },
+        { data: profileData, error: profileError },
         { data: skillsData },
         { data: coursesData },
         { data: projectsData },
@@ -41,7 +41,12 @@ export const useProfileData = () => {
         supabase.from('certifications').select('*').eq('profile_id', user.id)
       ]);
 
-      setProfile(profileData);
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+      } else {
+        setProfile(profileData);
+      }
+      
       setSkills(skillsData || []);
       setCourses(coursesData || []);
       setProjects(projectsData || []);
@@ -49,6 +54,7 @@ export const useProfileData = () => {
       setCertifications(certsData || []);
 
     } catch (error: any) {
+      console.error("Error in fetchProfileData:", error);
       toast({
         title: "Error loading profile",
         description: error.message,
@@ -57,11 +63,11 @@ export const useProfileData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   useEffect(() => {
     fetchProfileData();
-  }, [user, session]);
+  }, [fetchProfileData]);
 
   const updateProfile = async (data: Partial<Tables<'student_profiles'>>) => {
     if (!user) return false;
@@ -74,7 +80,7 @@ export const useProfileData = () => {
 
       if (error) throw error;
 
-      // Update local state immediately
+      // Update local state immediately for instant UI feedback
       setProfile(prev => prev ? { ...prev, ...data } : null);
       
       toast({
@@ -82,10 +88,11 @@ export const useProfileData = () => {
         description: "Profile updated successfully"
       });
 
-      // Refetch all profile data to ensure UI is up-to-date
+      // Refetch all profile data to ensure UI is fully up-to-date
       await fetchProfileData();
       return true;
     } catch (error: any) {
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: error.message,
