@@ -29,7 +29,7 @@ export const Education = ({
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
-  // Update local state when props change
+  // Update local state whenever props change
   useEffect(() => {
     setEditedMajor(major || "");
     setEditedYear(year || "");

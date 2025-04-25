@@ -16,6 +16,45 @@ export const useProfileData = () => {
   const [jobApplications, setJobApplications] = useState<Tables<'job_applications'>[]>([]);
   const [certifications, setCertifications] = useState<Tables<'certifications'>[]>([]);
 
+  const createProfileIfNotExists = async () => {
+    if (!user) return null;
+    
+    try {
+      // Check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('student_profiles')
+        .select('*')
+        .eq('id', user.id);
+      
+      if (checkError) throw checkError;
+
+      // If profile doesn't exist, create a new one
+      if (!existingProfile || existingProfile.length === 0) {
+        const newProfile = {
+          id: user.id,
+          name: user.user_metadata?.name || user.email?.split('@')[0] || 'Student',
+          email: user.email,
+          student_id: `S${Math.floor(100000 + Math.random() * 900000)}` // Generate a random student ID
+        };
+        
+        const { data: createdProfile, error: createError } = await supabase
+          .from('student_profiles')
+          .insert([newProfile])
+          .select()
+          .single();
+          
+        if (createError) throw createError;
+        
+        return createdProfile;
+      }
+      
+      return existingProfile[0];
+    } catch (error: any) {
+      console.error("Error ensuring profile exists:", error);
+      return null;
+    }
+  };
+
   const fetchProfileData = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -25,15 +64,20 @@ export const useProfileData = () => {
     try {
       setLoading(true);
       
+      // First ensure a profile exists
+      const currentProfile = await createProfileIfNotExists();
+      if (currentProfile) {
+        setProfile(currentProfile);
+      }
+      
+      // Now fetch all related data
       const [
-        { data: profileData, error: profileError },
-        { data: skillsData },
-        { data: coursesData },
-        { data: projectsData },
-        { data: jobsData },
-        { data: certsData }
+        { data: skillsData, error: skillsError },
+        { data: coursesData, error: coursesError },
+        { data: projectsData, error: projectsError },
+        { data: jobsData, error: jobsError },
+        { data: certsData, error: certsError }
       ] = await Promise.all([
-        supabase.from('student_profiles').select('*').eq('id', user.id).single(),
         supabase.from('skills').select('*').eq('profile_id', user.id),
         supabase.from('courses').select('*').eq('profile_id', user.id),
         supabase.from('projects').select('*').eq('profile_id', user.id),
@@ -41,11 +85,11 @@ export const useProfileData = () => {
         supabase.from('certifications').select('*').eq('profile_id', user.id)
       ]);
 
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      } else {
-        setProfile(profileData);
-      }
+      if (skillsError) console.error("Error fetching skills:", skillsError);
+      if (coursesError) console.error("Error fetching courses:", coursesError);
+      if (projectsError) console.error("Error fetching projects:", projectsError);
+      if (jobsError) console.error("Error fetching job applications:", jobsError);
+      if (certsError) console.error("Error fetching certifications:", certsError);
       
       setSkills(skillsData || []);
       setCourses(coursesData || []);

@@ -33,7 +33,7 @@ export const Summary = ({
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
-  // Update local state when props change
+  // Update local state whenever props change
   useEffect(() => {
     setEditedBio(bio || "");
     setEditedEmail(email || "");

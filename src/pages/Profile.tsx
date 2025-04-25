@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { Summary } from "@/components/profile/Summary";
@@ -32,10 +32,17 @@ const Profile = () => {
     certifications,
     refreshData
   } = useProfileData();
+  
+  // Force a refresh of data when exiting edit mode
+  useEffect(() => {
+    if (!editMode) {
+      refreshData();
+    }
+  }, [editMode, refreshData]);
 
   const handleSaveProfile = async () => {
     setEditMode(false);
-    await refreshData(); // Make sure to await this
+    // The useEffect will trigger a data refresh when editMode changes
     toast({
       title: "Profile saved",
       description: "All changes to your profile have been saved successfully."
@@ -111,6 +118,9 @@ const Profile = () => {
       </div>
     );
   }
+
+  // Add console logs to debug profile data
+  console.log("Current profile data:", profile);
 
   return (
     <div className="container py-8 animate-fade-in">
