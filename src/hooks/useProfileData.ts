@@ -64,7 +64,7 @@ export const useProfileData = () => {
   }, [user, session]);
 
   const updateProfile = async (data: Partial<Tables<'student_profiles'>>) => {
-    if (!user) return;
+    if (!user) return false;
 
     try {
       const { error } = await supabase
@@ -74,6 +74,7 @@ export const useProfileData = () => {
 
       if (error) throw error;
 
+      // Update local state immediately
       setProfile(prev => prev ? { ...prev, ...data } : null);
       
       toast({
@@ -81,6 +82,8 @@ export const useProfileData = () => {
         description: "Profile updated successfully"
       });
 
+      // Refetch all profile data to ensure UI is up-to-date
+      await fetchProfileData();
       return true;
     } catch (error: any) {
       toast({

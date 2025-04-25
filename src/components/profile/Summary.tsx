@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +32,14 @@ export const Summary = ({
   const [editedAddress, setEditedAddress] = useState(address || "");
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+
+  // Update local state when props change
+  useEffect(() => {
+    setEditedBio(bio || "");
+    setEditedEmail(email || "");
+    setEditedPhone(phone || "");
+    setEditedAddress(address || "");
+  }, [bio, email, phone, address]);
 
   const handleSaveSummary = async () => {
     try {

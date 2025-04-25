@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,13 @@ export const Education = ({
   const [editedGpa, setEditedGpa] = useState(gpa || "");
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+
+  // Update local state when props change
+  useEffect(() => {
+    setEditedMajor(major || "");
+    setEditedYear(year || "");
+    setEditedGpa(gpa || "");
+  }, [major, year, gpa]);
 
   const handleSaveEducation = async () => {
     try {
