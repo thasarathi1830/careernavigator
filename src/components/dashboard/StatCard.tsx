@@ -29,7 +29,9 @@ export function StatCard({
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
+          <p className="text-2xl font-bold mt-1">
+            {typeof value === 'number' ? value.toFixed(2) : value}
+          </p>
           {trend && (
             <div className="flex items-center mt-2">
               {trend.positive ? (

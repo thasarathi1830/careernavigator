@@ -1,4 +1,3 @@
-
 import { BookOpen, Briefcase, Calendar, FileText } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
@@ -47,14 +46,34 @@ const Index = () => {
     },
   ];
 
+  // Calculate initial CGPA from the mock data
+  const initialSemesterGPAs = [
+    { semester: "1st (Odd) Semester", sgpa: 8.4 },
+    { semester: "2nd (Even) Semester", sgpa: 8.5 },
+    { semester: "3rd (Odd) Semester", sgpa: 8.7 },
+    { semester: "4th (Even) Semester", sgpa: 8.75 },
+    { semester: "5th (Odd) Semester", sgpa: 8.8 },
+    { semester: "6th (Even) Semester", sgpa: 8.6 },
+    { semester: "7th (Odd) Semester", sgpa: 8.9 },
+    { semester: "8th (Even) Semester", sgpa: 8.85 }
+  ];
+
+  const calculateCGPA = (semesters: typeof initialSemesterGPAs) => {
+    if (semesters.length === 0) return 0;
+    const totalGPA = semesters.reduce((sum, sem) => sum + sem.sgpa, 0);
+    return totalGPA / semesters.length;
+  };
+
+  const cgpa = calculateCGPA(initialSemesterGPAs);
+
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          title="Current GPA"
-          value="3.75"
+          title="Current CGPA"
+          value={cgpa}
           trend={{ value: 5, positive: true }}
           icon={<BookOpen className="h-6 w-6" />}
         />

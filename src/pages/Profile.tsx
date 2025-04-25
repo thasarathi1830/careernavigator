@@ -42,7 +42,7 @@ const Profile = () => {
     address: "123 Campus Drive, University City, CA 94102",
     major: "Computer Science",
     year: "Junior",
-    gpa: "3.75",
+    gpa: "8.75",
     bio: "Enthusiastic computer science student with a passion for AI and machine learning. Looking for internship opportunities in software development.",
     skills: ["JavaScript", "Python", "React", "Node.js", "Machine Learning"],
     courses: [
