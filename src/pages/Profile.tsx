@@ -14,6 +14,7 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [newSkill, setNewSkill] = useState("");
 
   // Student profile state
   const [studentProfile, setStudentProfile] = useState({
