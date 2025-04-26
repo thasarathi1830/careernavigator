@@ -21,6 +21,18 @@ interface ThemeContextType {
   isLoading: boolean;
 }
 
+// Define interface for the user_preferences table data
+interface UserPreferencesData {
+  id: string;
+  profile_id: string;
+  theme: Theme;
+  font_size: string;
+  color_blind_mode: boolean;
+  reduced_motion: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const ThemeContext = createContext<ThemeContextType>({
   theme: "system",
   preferences: null,
@@ -71,12 +83,12 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
       try {
         setIsLoading(true);
         
-        // Check if user has preferences
+        // Using explicit typing to avoid type errors
         const { data, error } = await supabase
-          .from("user_preferences")
-          .select("*")
-          .eq("profile_id", user.id)
-          .single();
+          .from('user_preferences')
+          .select('*')
+          .eq('profile_id', user.id)
+          .single<UserPreferencesData>();
 
         if (error && error.code !== "PGRST116") { // PGRST116 means no rows returned
           throw error;
@@ -101,15 +113,17 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
             reducedMotion: false,
           };
 
+          // Using any type here to bypass TypeScript checking since the table exists in the database
+          // but not in the generated types
           const { error: insertError } = await supabase
-            .from("user_preferences")
+            .from('user_preferences')
             .insert({
               profile_id: user.id,
               theme,
               font_size: defaultPreferences.fontSize,
               color_blind_mode: defaultPreferences.colorBlindMode,
               reduced_motion: defaultPreferences.reducedMotion,
-            });
+            } as any);
 
           if (insertError) throw insertError;
           
@@ -139,15 +153,16 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
       
       // Update database if user is logged in
       if (user) {
+        // Using any type to bypass TypeScript checking for the same reason
         const { error } = await supabase
-          .from("user_preferences")
+          .from('user_preferences')
           .upsert({
             profile_id: user.id,
             theme: newTheme,
             font_size: preferences?.fontSize || "medium",
             color_blind_mode: preferences?.colorBlindMode || false,
             reduced_motion: preferences?.reducedMotion || false,
-          }, { onConflict: "profile_id" });
+          } as any, { onConflict: "profile_id" });
 
         if (error) throw error;
         
@@ -181,14 +196,14 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
 
       // Update database
       const { error } = await supabase
-        .from("user_preferences")
+        .from('user_preferences')
         .upsert({
           profile_id: user.id,
           theme: updatedPreferences.theme,
           font_size: updatedPreferences.fontSize,
           color_blind_mode: updatedPreferences.colorBlindMode,
           reduced_motion: updatedPreferences.reducedMotion,
-        }, { onConflict: "profile_id" });
+        } as any, { onConflict: "profile_id" });
 
       if (error) throw error;
       

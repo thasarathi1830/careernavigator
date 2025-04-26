@@ -2,10 +2,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider as ShadcnThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthGuard } from "./components/auth/AuthGuard";
@@ -27,108 +26,106 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <ShadcnThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route
-                  path="/"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <Index />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <Profile />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/course-tracker"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <CourseTracker />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/job-portal"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <JobPortal />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/projects"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <Projects />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/exams"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <Exams />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/forum"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <Forum />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <Settings />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/resume-builder"
-                  element={
-                    <AuthGuard>
-                      <Layout>
-                        <ResumeBuilder />
-                      </Layout>
-                    </AuthGuard>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ShadcnThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <Index />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <Profile />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/course-tracker"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <CourseTracker />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/job-portal"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <JobPortal />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <Projects />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/exams"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <Exams />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/forum"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <Forum />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <Settings />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/resume-builder"
+                element={
+                  <AuthGuard>
+                    <Layout>
+                      <ResumeBuilder />
+                    </Layout>
+                  </AuthGuard>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>
