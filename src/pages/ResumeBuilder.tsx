@@ -13,25 +13,24 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { Tables } from "@/integrations/supabase/types";
 
-interface ResumeData {
-  id?: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  location: string;
-  summary: string;
-  experience: Experience[];
-  education: Education[];
-  skills: Skill[];
-  projects: Project[];
-  certifications: Certification[];
-  languages: Language[];
-  resume_score: number;
+interface ResumeData extends Partial<Tables<'resume_details'>> {
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  summary?: string;
+  experience?: Experience[];
+  education?: Education[];
+  skills?: Skill[];
+  projects?: Project[];
+  certifications?: Certification[];
+  languages?: Language[];
+  resume_score?: number;
 }
 
 interface Experience {
-  id?: string;
   title: string;
   company: string;
   location: string;
@@ -42,7 +41,6 @@ interface Experience {
 }
 
 interface Education {
-  id?: string;
   institution: string;
   degree: string;
   field: string;
@@ -53,13 +51,11 @@ interface Education {
 }
 
 interface Skill {
-  id?: string;
   name: string;
   level: string;
 }
 
 interface Project {
-  id?: string;
   name: string;
   description: string;
   technologies: string;
@@ -67,7 +63,6 @@ interface Project {
 }
 
 interface Certification {
-  id?: string;
   name: string;
   issuer: string;
   issue_date: string;
@@ -75,7 +70,6 @@ interface Certification {
 }
 
 interface Language {
-  id?: string;
   name: string;
   proficiency: string;
 }
@@ -153,19 +147,9 @@ const ResumeBuilder = () => {
         
         if (data) {
           setResumeData({
-            id: data.id,
+            ...data,
             full_name: data.full_name || user.user_metadata?.full_name || "",
             email: data.email || user.email || "",
-            phone: data.phone || "",
-            location: data.location || "",
-            summary: data.summary || "",
-            experience: data.experience || [],
-            education: data.education || [],
-            skills: data.skills || [],
-            projects: data.projects || [],
-            certifications: data.certifications || [],
-            languages: data.languages || [],
-            resume_score: data.resume_score || 0
           });
         } else {
           setResumeData({

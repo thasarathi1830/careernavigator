@@ -58,7 +58,6 @@ const Forum = () => {
 
   const fetchPosts = async () => {
     try {
-      // First, get all posts with their profiles
       const { data: postsData, error: postsError } = await supabase
         .from('forum_posts')
         .select(`
@@ -69,11 +68,9 @@ const Forum = () => {
         
       if (postsError) throw postsError;
 
-      // Get reply counts for all posts
       const { data: replyCounts, error: replyError } = await supabase
         .from('forum_replies')
-        .select('post_id, count', { count: 'exact' })
-        .select();
+        .select('post_id', { count: 'exact' });
 
       if (replyError) throw replyError;
 
@@ -87,6 +84,7 @@ const Forum = () => {
           author_avatar: post.profiles?.[0]?.avatar_url,
           date: new Date(post.created_at).toISOString().split('T')[0],
           replies: replyCount,
+          profiles: post.profiles
         };
       });
       
@@ -96,7 +94,7 @@ const Forum = () => {
       toast({
         title: "Error",
         description: "Failed to load forum posts",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -174,8 +172,9 @@ const Forum = () => {
         author_id: reply.profile_id,
         author_avatar: reply.profiles?.[0]?.avatar_url,
         date: new Date(reply.created_at).toISOString().split('T')[0],
+        profiles: reply.profiles
       }));
-
+      
       setReplies(processedReplies);
     } catch (error) {
       console.error('Error fetching replies:', error);
@@ -233,14 +232,12 @@ const Forum = () => {
     setSelectedPost(post);
     await fetchReplies(post.id);
 
-    // Optimistically update the views
     setPosts(prevPosts =>
       prevPosts.map(p =>
         p.id === post.id ? { ...p, views: p.views + 1 } : p
       )
     );
 
-    // Update views in the database
     try {
       const { error } = await supabase
         .from('forum_posts')
@@ -255,7 +252,6 @@ const Forum = () => {
           variant: "destructive",
         });
 
-        // Revert the optimistic update if the database update fails
         setPosts(prevPosts =>
           prevPosts.map(p => (p.id === post.id ? { ...p, views: p.views } : p))
         );
@@ -268,7 +264,6 @@ const Forum = () => {
         variant: "destructive",
       });
 
-      // Revert the optimistic update if an error occurs
       setPosts(prevPosts =>
         prevPosts.map(p => (p.id === post.id ? { ...p, views: p.views } : p))
       );
@@ -396,79 +391,77 @@ const Forum = () => {
       )}
 
       <Dialog open={selectedPost !== null} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="sm:max-w-[80%]">
-          {selectedPost && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
-                  {selectedPost.title}
-                  <Badge variant="secondary">{selectedPost.tags?.join(", ")}</Badge>
-                </DialogTitle>
-                <DialogDescription>
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      {selectedPost.author_avatar ? (
-                        <AvatarImage src={selectedPost.author_avatar} alt={selectedPost.author} />
-                      ) : (
-                        <AvatarFallback>{selectedPost.author.charAt(0)}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{selectedPost.author}</div>
-                      <div className="text-sm text-gray-500">{selectedPost.date}</div>
-                    </div>
+        {selectedPost && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                {selectedPost.title}
+                <Badge variant="secondary">{selectedPost.tags?.join(", ")}</Badge>
+              </DialogTitle>
+              <DialogDescription>
+                <div className="flex items-center space-x-4">
+                  <Avatar>
+                    {selectedPost.author_avatar ? (
+                      <AvatarImage src={selectedPost.author_avatar} alt={selectedPost.author} />
+                    ) : (
+                      <AvatarFallback>{selectedPost.author.charAt(0)}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{selectedPost.author}</div>
+                    <div className="text-sm text-gray-500">{selectedPost.date}</div>
                   </div>
-                  <p className="mt-2">{selectedPost.content}</p>
-                  <div className="flex items-center mt-4 space-x-4">
-                    <div className="flex items-center space-x-2 text-gray-500">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>{selectedPost.replies}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-500">
-                      <Eye className="h-4 w-4" />
-                      <span>{view(selectedPost.views)}</span>
-                    </div>
+                </div>
+                <p className="mt-2">{selectedPost.content}</p>
+                <div className="flex items-center mt-4 space-x-4">
+                  <div className="flex items-center space-x-2 text-gray-500">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>{selectedPost.replies}</span>
                   </div>
-                </DialogDescription>
-              </DialogHeader>
+                  <div className="flex items-center space-x-2 text-gray-500">
+                    <Eye className="h-4 w-4" />
+                    <span>{view(selectedPost.views)}</span>
+                  </div>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
 
-              <div className="mt-4">
-                <h3 className="text-xl font-bold mb-2">Replies</h3>
-                {replies.map((reply) => (
-                  <Card key={reply.id} className="mb-4">
-                    <CardContent>
-                      <div className="flex items-center space-x-4 mb-2">
-                        <Avatar>
-                          {reply.author_avatar ? (
-                            <AvatarImage src={reply.author_avatar} alt={reply.author} />
-                          ) : (
-                            <AvatarFallback>{reply.author.charAt(0)}</AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{reply.author}</div>
-                          <div className="text-sm text-gray-500">{reply.date}</div>
-                        </div>
+            <div className="mt-4">
+              <h3 className="text-xl font-bold mb-2">Replies</h3>
+              {replies.map((reply) => (
+                <Card key={reply.id} className="mb-4">
+                  <CardContent>
+                    <div className="flex items-center space-x-4 mb-2">
+                      <Avatar>
+                        {reply.author_avatar ? (
+                          <AvatarImage src={reply.author_avatar} alt={reply.author} />
+                        ) : (
+                          <AvatarFallback>{reply.author.charAt(0)}</AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{reply.author}</div>
+                        <div className="text-sm text-gray-500">{reply.date}</div>
                       </div>
-                      <p>{reply.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </div>
+                    <p>{reply.content}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-              <div className="mt-4">
-                <Textarea
-                  placeholder="Write your reply here..."
-                  value={newReply}
-                  onChange={(e) => setNewReply(e.target.value)}
-                />
-                <Button className="mt-2" onClick={() => createReply(selectedPost.id)}>
-                  Submit Reply
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
+            <div className="mt-4">
+              <Textarea
+                placeholder="Write your reply here..."
+                value={newReply}
+                onChange={(e) => setNewReply(e.target.value)}
+              />
+              <Button className="mt-2" onClick={() => createReply(selectedPost.id)}>
+                Submit Reply
+              </Button>
+            </div>
+          </>
+        )}
       </Dialog>
     </div>
   );

@@ -295,6 +295,63 @@ export type Database = {
           },
         ]
       }
+      resume_details: {
+        Row: {
+          certifications: Json[] | null
+          created_at: string | null
+          education: Json[] | null
+          email: string | null
+          experience: Json[] | null
+          full_name: string | null
+          id: string
+          languages: Json[] | null
+          location: string | null
+          phone: string | null
+          profile_id: string
+          projects: Json[] | null
+          resume_score: number | null
+          skills: Json[] | null
+          summary: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          certifications?: Json[] | null
+          created_at?: string | null
+          education?: Json[] | null
+          email?: string | null
+          experience?: Json[] | null
+          full_name?: string | null
+          id?: string
+          languages?: Json[] | null
+          location?: string | null
+          phone?: string | null
+          profile_id: string
+          projects?: Json[] | null
+          resume_score?: number | null
+          skills?: Json[] | null
+          summary?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          certifications?: Json[] | null
+          created_at?: string | null
+          education?: Json[] | null
+          email?: string | null
+          experience?: Json[] | null
+          full_name?: string | null
+          id?: string
+          languages?: Json[] | null
+          location?: string | null
+          phone?: string | null
+          profile_id?: string
+          projects?: Json[] | null
+          resume_score?: number | null
+          skills?: Json[] | null
+          summary?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       semester_courses: {
         Row: {
           course_code: string | null
