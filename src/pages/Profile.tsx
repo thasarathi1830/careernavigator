@@ -162,6 +162,7 @@ const Profile = () => {
             major={profile?.major}
             year={profile?.year}
             gpa={profile?.gpa}
+            university={profile?.university}
             isEditMode={editMode}
             profileId={user?.id || ""}
             onProfileUpdate={refreshData}

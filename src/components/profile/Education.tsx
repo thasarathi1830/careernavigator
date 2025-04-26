@@ -10,6 +10,7 @@ interface EducationProps {
   major: string | null;
   year: string | null;
   gpa: string | null;
+  university: string | null; // Added university field
   isEditMode: boolean;
   profileId: string;
   onProfileUpdate: () => void;
@@ -18,7 +19,8 @@ interface EducationProps {
 export const Education = ({ 
   major, 
   year, 
-  gpa, 
+  gpa,
+  university, // Add university to props
   isEditMode,
   profileId,
   onProfileUpdate
@@ -26,6 +28,7 @@ export const Education = ({
   const [editedMajor, setEditedMajor] = useState(major || "");
   const [editedYear, setEditedYear] = useState(year || "");
   const [editedGpa, setEditedGpa] = useState(gpa || "");
+  const [editedUniversity, setEditedUniversity] = useState(university || ""); // Add state for university
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
@@ -34,16 +37,20 @@ export const Education = ({
     setEditedMajor(major || "");
     setEditedYear(year || "");
     setEditedGpa(gpa || "");
-  }, [major, year, gpa]);
+    setEditedUniversity(university || ""); // Update university state when props change
+  }, [major, year, gpa, university]);
 
   const handleSaveEducation = async () => {
     try {
+      console.log("Saving education with university:", editedUniversity);
+      
       const { error } = await supabase
         .from('student_profiles')
         .update({
           major: editedMajor || null,
           year: editedYear || null,
-          gpa: editedGpa || null
+          gpa: editedGpa || null,
+          university: editedUniversity || null // Add university to update
         })
         .eq('id', profileId);
 
@@ -77,9 +84,9 @@ export const Education = ({
             <div>
               <label className="block text-sm font-medium mb-1">University</label>
               <Input
-                value="University Name"
-                disabled
-                className="bg-gray-50"
+                value={editedUniversity}
+                onChange={(e) => setEditedUniversity(e.target.value)}
+                placeholder="Enter your university"
               />
             </div>
             <div>
@@ -115,6 +122,7 @@ export const Education = ({
                   setEditedMajor(major || "");
                   setEditedYear(year || "");
                   setEditedGpa(gpa || "");
+                  setEditedUniversity(university || ""); // Reset university when cancelling
                 }}
               >
                 Cancel
@@ -124,7 +132,7 @@ export const Education = ({
         ) : (
           <div className="space-y-4">
             <div>
-              <h3 className="font-medium text-gray-900">University Name</h3>
+              <h3 className="font-medium text-gray-900">{university || "University Name"}</h3>
               <p className="text-gray-600">{major || "Not specified"} • {year || "Not specified"} Year</p>
               <p className="text-gray-600">CGPA: {gpa || "Not specified"}</p>
               
