@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { ResumeData, Experience, Education, Skill, Project, Certification, Language } from '@/types/resume';
+import { ResumeData, Experience, Education, Skill, Project, Certification, Language, ResumeDataSupabase } from '@/types/resume';
 import { Json } from '@/integrations/supabase/types';
 
 const initialResumeData: ResumeData = {
@@ -86,18 +86,27 @@ export const useResumeData = () => {
         if (error) throw error;
         
         if (data) {
-          setResumeData({
+          const typedData: ResumeData = {
             ...initialResumeData,
-            ...data,
+            id: data.id,
+            profile_id: data.profile_id,
             full_name: data.full_name || user.user_metadata?.full_name || "",
             email: data.email || user.email || "",
-            experience: parseJsonArray<Experience>(data.experience, []),
-            education: parseJsonArray<Education>(data.education, []),
-            skills: parseJsonArray<Skill>(data.skills, []),
-            projects: parseJsonArray<Project>(data.projects, []),
-            certifications: parseJsonArray<Certification>(data.certifications, []),
-            languages: parseJsonArray<Language>(data.languages, [])
-          });
+            phone: data.phone || "",
+            location: data.location || "",
+            summary: data.summary || "",
+            experience: parseJsonArray<Experience>(data.experience as Json[], []),
+            education: parseJsonArray<Education>(data.education as Json[], []),
+            skills: parseJsonArray<Skill>(data.skills as Json[], []),
+            projects: parseJsonArray<Project>(data.projects as Json[], []),
+            certifications: parseJsonArray<Certification>(data.certifications as Json[], []),
+            languages: parseJsonArray<Language>(data.languages as Json[], []),
+            resume_score: data.resume_score || 0,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          };
+          
+          setResumeData(typedData);
         } else {
           setResumeData({
             ...initialResumeData,
@@ -149,7 +158,7 @@ export const useResumeData = () => {
       const score = calculateResumeScore(resumeData);
       
       // Convert the typed arrays to Json[] for Supabase
-      const dataToSave = {
+      const dataToSave: ResumeDataSupabase = {
         profile_id: user.id,
         full_name: resumeData.full_name,
         email: resumeData.email,

@@ -1,7 +1,10 @@
 
-import { Tables } from "@/integrations/supabase/types";
+import { Tables, Json } from "@/integrations/supabase/types";
 
-export interface ResumeData extends Partial<Tables<'resume_details'>> {
+// Remove extension from Supabase Tables type and define our own interface
+export interface ResumeData {
+  id?: string;
+  profile_id?: string;
   full_name?: string;
   email?: string;
   phone?: string;
@@ -14,6 +17,8 @@ export interface ResumeData extends Partial<Tables<'resume_details'>> {
   certifications: Certification[];
   languages: Language[];
   resume_score?: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface Experience {
@@ -59,3 +64,13 @@ export interface Language {
   name: string;
   proficiency: string;
 }
+
+// Helper type for converting between ResumeData and Supabase table format
+export type ResumeDataSupabase = Omit<Tables<'resume_details'>, 'experience' | 'education' | 'skills' | 'projects' | 'certifications' | 'languages'> & {
+  experience?: Json[];
+  education?: Json[];
+  skills?: Json[];
+  projects?: Json[];
+  certifications?: Json[];
+  languages?: Json[];
+};
