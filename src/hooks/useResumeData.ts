@@ -159,6 +159,7 @@ export const useResumeData = () => {
       
       // Convert the typed arrays to Json[] for Supabase
       const dataToSave: ResumeDataSupabase = {
+        id: resumeData.id, // Include id if it exists
         profile_id: user.id,
         full_name: resumeData.full_name,
         email: resumeData.email,
@@ -172,6 +173,7 @@ export const useResumeData = () => {
         certifications: resumeData.certifications as unknown as Json[],
         languages: resumeData.languages as unknown as Json[],
         resume_score: score,
+        created_at: resumeData.created_at, // Include created_at if it exists
         updated_at: new Date().toISOString()
       };
       
