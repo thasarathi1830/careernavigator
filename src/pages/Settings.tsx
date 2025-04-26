@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,21 +44,59 @@ const SettingsPage = () => {
   const accountForm = useForm({
     resolver: zodResolver(accountFormSchema),
     defaultValues: {
-      name: "John Doe",
-      email: "john.doe@university.edu",
+      name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+      email: user?.email || '',
     },
   });
 
-  const handleAccountSubmit = (values) => {
-    setSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSaving(false);
+  const handleAccountSubmit = async (values) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to update account settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // Update user metadata
+      const { error } = await supabase.auth.updateUser({
+        data: { 
+          full_name: values.name 
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Update email if changed (optional)
+      if (values.email !== user.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: values.email
+        });
+
+        if (emailError) {
+          throw emailError;
+        }
+      }
+
       toast({
         title: "Account settings updated",
         description: "Your account settings have been updated successfully.",
       });
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update account settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Notification settings
