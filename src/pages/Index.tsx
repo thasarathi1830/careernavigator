@@ -1,4 +1,3 @@
-
 import { BookOpen, Briefcase, Calendar, FileText } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
@@ -108,10 +107,10 @@ const Index = () => {
             {upcomingDeadlines.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between border-b pb-4 last:border-0"
+                className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 last:border-0 gap-2"
                 aria-label={`${item.title} due on ${new Date(item.date).toLocaleDateString()}`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 flex-1">
                   <div
                     className={`p-2 rounded-md ${
                       item.type === "exam"
@@ -138,26 +137,16 @@ const Index = () => {
                     </div>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-education-primary hover:text-education-primary hover:bg-education-light"
-                  aria-label={`View details for ${item.title}`}
-                >
-                  View
-                </Button>
               </li>
             ))}
           </ul>
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              className="w-full border-education-primary text-education-primary hover:bg-education-light"
-              aria-label="View all upcoming deadlines"
-            >
-              See All Deadlines
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="w-full mt-4 border-education-primary text-education-primary hover:bg-education-light"
+            aria-label="Navigate to deadlines page to view all upcoming deadlines"
+          >
+            View All Deadlines
+          </Button>
         </DashboardCard>
 
         <DashboardCard 
