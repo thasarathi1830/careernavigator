@@ -230,6 +230,7 @@ export type Database = {
           name: string | null
           phone: string | null
           student_id: string | null
+          university: string | null
           updated_at: string
           year: string | null
         }
@@ -245,6 +246,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           student_id?: string | null
+          university?: string | null
           updated_at?: string
           year?: string | null
         }
@@ -260,6 +262,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           student_id?: string | null
+          university?: string | null
           updated_at?: string
           year?: string | null
         }

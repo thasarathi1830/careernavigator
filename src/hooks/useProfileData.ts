@@ -34,7 +34,8 @@ export const useProfileData = () => {
           id: user.id,
           name: user.user_metadata?.name || user.email?.split('@')[0] || 'Student',
           email: user.email,
-          student_id: `S${Math.floor(100000 + Math.random() * 900000)}` // Generate a random student ID
+          student_id: `S${Math.floor(100000 + Math.random() * 900000)}`, // Generate a random student ID
+          university: null // Add university field to new profile
         };
         
         const { data: createdProfile, error: createError } = await supabase
