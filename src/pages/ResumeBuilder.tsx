@@ -1,17 +1,21 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Save, Download } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import PersonalInfoTab from "@/components/resume/PersonalInfoTab";
 import ExperienceTab from "@/components/resume/ExperienceTab";
+import EducationTab from "@/components/resume/EducationTab";
+import SkillsTab from "@/components/resume/SkillsTab";
+import ProjectsTab from "@/components/resume/ProjectsTab";
+import ExtrasTab from "@/components/resume/ExtrasTab";
 import { useResumeData } from "@/hooks/useResumeData";
-import { Experience } from "@/types/resume";
+import { Experience, Education, Skill, Project } from "@/types/resume";
 
 const ResumeBuilder = () => {
   const { toast } = useToast();
@@ -32,6 +36,7 @@ const ResumeBuilder = () => {
     }));
   };
 
+  // Experience handlers
   const handleAddExperience = () => {
     setResumeData(prev => ({
       ...prev,
@@ -68,6 +73,118 @@ const ResumeBuilder = () => {
     setResumeData(prev => ({
       ...prev,
       experience: prev.experience.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Education handlers
+  const handleAddEducation = () => {
+    setResumeData(prev => ({
+      ...prev,
+      education: [
+        ...prev.education,
+        {
+          institution: "",
+          degree: "",
+          field: "",
+          from_date: "",
+          to_date: "",
+          current: false,
+          description: ""
+        }
+      ]
+    }));
+  };
+  
+  const handleUpdateEducation = (index: number, field: keyof Education, value: any) => {
+    setResumeData(prev => {
+      const updatedEducation = [...prev.education];
+      updatedEducation[index] = {
+        ...updatedEducation[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        education: updatedEducation
+      };
+    });
+  };
+  
+  const handleRemoveEducation = (index: number) => {
+    setResumeData(prev => ({
+      ...prev,
+      education: prev.education.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Skills handlers
+  const handleAddSkill = () => {
+    setResumeData(prev => ({
+      ...prev,
+      skills: [
+        ...prev.skills,
+        {
+          name: "",
+          level: "Intermediate"
+        }
+      ]
+    }));
+  };
+  
+  const handleUpdateSkill = (index: number, field: keyof Skill, value: any) => {
+    setResumeData(prev => {
+      const updatedSkills = [...prev.skills];
+      updatedSkills[index] = {
+        ...updatedSkills[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        skills: updatedSkills
+      };
+    });
+  };
+  
+  const handleRemoveSkill = (index: number) => {
+    setResumeData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Projects handlers
+  const handleAddProject = () => {
+    setResumeData(prev => ({
+      ...prev,
+      projects: [
+        ...prev.projects,
+        {
+          name: "",
+          description: "",
+          technologies: "",
+          url: ""
+        }
+      ]
+    }));
+  };
+  
+  const handleUpdateProject = (index: number, field: keyof Project, value: any) => {
+    setResumeData(prev => {
+      const updatedProjects = [...prev.projects];
+      updatedProjects[index] = {
+        ...updatedProjects[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        projects: updatedProjects
+      };
+    });
+  };
+  
+  const handleRemoveProject = (index: number) => {
+    setResumeData(prev => ({
+      ...prev,
+      projects: prev.projects.filter((_, i) => i !== index)
     }));
   };
 
@@ -196,312 +313,42 @@ const ResumeBuilder = () => {
                   />
                 </TabsContent>
                 
-                <TabsContent value="education" className="space-y-6">
-                  {resumeData.education.map((edu, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4 relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleRemoveEducation(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`edu-institution-${index}`}>Institution</Label>
-                          <Input
-                            id={`edu-institution-${index}`}
-                            value={edu.institution}
-                            onChange={(e) => handleUpdateEducation(index, "institution", e.target.value)}
-                            placeholder="University of Example"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`edu-degree-${index}`}>Degree</Label>
-                          <Input
-                            id={`edu-degree-${index}`}
-                            value={edu.degree}
-                            onChange={(e) => handleUpdateEducation(index, "degree", e.target.value)}
-                            placeholder="Bachelor of Science"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`edu-field-${index}`}>Field of Study</Label>
-                          <Input
-                            id={`edu-field-${index}`}
-                            value={edu.field}
-                            onChange={(e) => handleUpdateEducation(index, "field", e.target.value)}
-                            placeholder="Computer Science"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`edu-from-${index}`}>From</Label>
-                          <Input
-                            id={`edu-from-${index}`}
-                            type="date"
-                            value={edu.from_date}
-                            onChange={(e) => handleUpdateEducation(index, "from_date", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`edu-to-${index}`}>To</Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id={`edu-to-${index}`}
-                              type="date"
-                              value={edu.to_date}
-                              onChange={(e) => handleUpdateEducation(index, "to_date", e.target.value)}
-                              disabled={edu.current}
-                            />
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id={`edu-current-${index}`}
-                                checked={edu.current}
-                                onChange={(e) => handleUpdateEducation(index, "current", e.target.checked)}
-                              />
-                              <Label htmlFor={`edu-current-${index}`} className="text-sm">Current</Label>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`edu-desc-${index}`}>Description</Label>
-                        <Textarea
-                          id={`edu-desc-${index}`}
-                          value={edu.description}
-                          onChange={(e) => handleUpdateEducation(index, "description", e.target.value)}
-                          placeholder="Describe your studies, achievements, activities..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    variant="outline"
-                    onClick={handleAddEducation}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Education
-                  </Button>
-                  
-                  <div className="flex justify-between">
-                    <Button 
-                      variant="ghost"
-                      onClick={() => setActiveTab("experience")}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={() => setActiveTab("skills")}
-                      className="flex items-center gap-2"
-                    >
-                      Next: Skills <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TabsContent value="education">
+                  <EducationTab
+                    resumeData={resumeData}
+                    handleAddEducation={handleAddEducation}
+                    handleUpdateEducation={handleUpdateEducation}
+                    handleRemoveEducation={handleRemoveEducation}
+                    setActiveTab={setActiveTab}
+                  />
                 </TabsContent>
                 
-                <TabsContent value="skills" className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {resumeData.skills.map((skill, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-2 relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleRemoveSkill(index)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`skill-name-${index}`}>Skill</Label>
-                          <Input
-                            id={`skill-name-${index}`}
-                            value={skill.name}
-                            onChange={(e) => handleUpdateSkill(index, "name", e.target.value)}
-                            placeholder="JavaScript"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`skill-level-${index}`}>Proficiency Level</Label>
-                          <select
-                            id={`skill-level-${index}`}
-                            value={skill.level}
-                            onChange={(e) => handleUpdateSkill(index, "level", e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                          >
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced</option>
-                            <option value="Expert">Expert</option>
-                          </select>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={handleAddSkill}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Skill
-                  </Button>
-                  
-                  <div className="flex justify-between">
-                    <Button 
-                      variant="ghost"
-                      onClick={() => setActiveTab("education")}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={() => setActiveTab("projects")}
-                      className="flex items-center gap-2"
-                    >
-                      Next: Projects <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TabsContent value="skills">
+                  <SkillsTab
+                    resumeData={resumeData}
+                    handleAddSkill={handleAddSkill}
+                    handleUpdateSkill={handleUpdateSkill}
+                    handleRemoveSkill={handleRemoveSkill}
+                    setActiveTab={setActiveTab}
+                  />
                 </TabsContent>
                 
-                <TabsContent value="projects" className="space-y-6">
-                  {resumeData.projects.map((project, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4 relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleRemoveProject(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`project-name-${index}`}>Project Name</Label>
-                          <Input
-                            id={`project-name-${index}`}
-                            value={project.name}
-                            onChange={(e) => handleUpdateProject(index, "name", e.target.value)}
-                            placeholder="E-commerce Website"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`project-url-${index}`}>Project URL</Label>
-                          <Input
-                            id={`project-url-${index}`}
-                            value={project.url}
-                            onChange={(e) => handleUpdateProject(index, "url", e.target.value)}
-                            placeholder="https://github.com/username/project"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`project-tech-${index}`}>Technologies</Label>
-                        <Input
-                          id={`project-tech-${index}`}
-                          value={project.technologies}
-                          onChange={(e) => handleUpdateProject(index, "technologies", e.target.value)}
-                          placeholder="React, Node.js, MongoDB"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`project-desc-${index}`}>Description</Label>
-                        <Textarea
-                          id={`project-desc-${index}`}
-                          value={project.description}
-                          onChange={(e) => handleUpdateProject(index, "description", e.target.value)}
-                          placeholder="Describe the project, your role, and accomplishments..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    variant="outline"
-                    onClick={handleAddProject}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Project
-                  </Button>
-                  
-                  <div className="flex justify-between">
-                    <Button 
-                      variant="ghost"
-                      onClick={() => setActiveTab("skills")}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={() => setActiveTab("extras")}
-                      className="flex items-center gap-2"
-                    >
-                      Next: Extras <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TabsContent value="projects">
+                  <ProjectsTab
+                    resumeData={resumeData}
+                    handleAddProject={handleAddProject}
+                    handleUpdateProject={handleUpdateProject}
+                    handleRemoveProject={handleRemoveProject}
+                    setActiveTab={setActiveTab}
+                  />
                 </TabsContent>
                 
-                <TabsContent value="extras" className="space-y-6">
-                  <div className="border rounded-lg p-4">
-                    <h3 className="text-lg font-medium mb-2">Resume Score</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Completeness</span>
-                        <span>{resumeData.resume_score}%</span>
-                      </div>
-                      <Progress value={resumeData.resume_score} className="h-2" />
-                      
-                      <div className="text-sm text-gray-500 mt-2">
-                        <p>Resume score is calculated based on the completeness of your resume.</p>
-                        <ul className="list-disc list-inside mt-1">
-                          <li>Personal Information: 30%</li>
-                          <li>Experience: 20%</li>
-                          <li>Education: 15%</li>
-                          <li>Skills: 15%</li>
-                          <li>Projects: 10%</li>
-                          <li>Additional Information: 10%</li>
-                        </ul>
-                      </div>
-                      
-                      {resumeData.resume_score < 80 && (
-                        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md mt-4 text-sm">
-                          <p className="font-medium text-yellow-800">Recommendations to improve your resume:</p>
-                          <ul className="list-disc list-inside mt-1 text-yellow-700">
-                            {!resumeData.summary && <li>Add a professional summary</li>}
-                            {resumeData.experience.length === 0 && <li>Add work experience</li>}
-                            {resumeData.education.length === 0 && <li>Add education details</li>}
-                            {resumeData.skills.length < 5 && <li>Add at least 5 relevant skills</li>}
-                            {resumeData.projects.length === 0 && <li>Add projects to showcase your work</li>}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <Button 
-                      variant="ghost"
-                      onClick={() => setActiveTab("projects")}
-                    >
-                      Back
-                    </Button>
-                    <Button onClick={handleDownloadPDF}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PDF
-                    </Button>
-                  </div>
+                <TabsContent value="extras">
+                  <ExtrasTab
+                    resumeData={resumeData}
+                    setActiveTab={setActiveTab}
+                    handleDownloadPDF={handleDownloadPDF}
+                  />
                 </TabsContent>
               </Tabs>
             </CardContent>
