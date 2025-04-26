@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -73,7 +72,15 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col items-center mb-8">
+        <img 
+          src="/lovable-uploads/9ad5f683-0a69-459f-83c1-46d1dfbb2c6e.png" 
+          alt="CareerNavigator Logo" 
+          className="w-16 h-16 mb-4"
+        />
+        <h1 className="text-2xl font-bold">CareerNavigator</h1>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{isLogin ? "Sign In" : "Create Account"}</CardTitle>

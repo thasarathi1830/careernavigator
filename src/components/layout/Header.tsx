@@ -54,11 +54,18 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        <p className="mr-auto font-bold">
-          CareerNavigator
-        </p>
+        <div className="flex items-center gap-2">
+          <img 
+            src="/lovable-uploads/9ad5f683-0a69-459f-83c1-46d1dfbb2c6e.png" 
+            alt="CareerNavigator Logo" 
+            className="w-8 h-8"
+          />
+          <p className="font-bold">
+            CareerNavigator
+          </p>
+        </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 ml-auto">
           <ThemeToggle />
           {user ? (
             <Button 
