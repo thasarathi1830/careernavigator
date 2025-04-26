@@ -5,22 +5,41 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useState } from "react";
 
 export default function Header() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      setIsSigningOut(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to sign out. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "You have been signed out successfully.",
+        });
+        navigate("/auth");
+      }
+    } catch (error) {
+      console.error("Unexpected error during sign out:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } else {
-      navigate("/auth");
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
@@ -34,8 +53,12 @@ export default function Header() {
         <div className="flex items-center gap-4">
           <ThemeToggle />
           {user ? (
-            <Button variant="ghost" onClick={handleSignOut}>
-              Sign Out
+            <Button 
+              variant="ghost" 
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? "Signing Out..." : "Sign Out"}
             </Button>
           ) : (
             <Button onClick={() => navigate("/auth")}>

@@ -26,8 +26,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        if (event === 'SIGNED_OUT') {
+          // Clear user and session on sign out
+          setUser(null);
+          setSession(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        
         setLoading(false);
       }
     );
@@ -40,11 +48,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.error("Error getting session:", error);
-          toast({
-            title: "Session Error",
-            description: error.message,
-            variant: "destructive",
-          });
+          // Don't show toast on initial load if no session exists
+          if (error.message !== "Session not found") {
+            toast({
+              title: "Session Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          // Clear user and session state on error
+          setUser(null);
+          setSession(null);
         } else {
           console.log("Initial session:", data?.session?.user?.email);
           setSession(data.session);
@@ -52,6 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("Unexpected error getting session:", error);
+        // Clear user and session state on error
+        setUser(null);
+        setSession(null);
       } finally {
         setLoading(false);
       }

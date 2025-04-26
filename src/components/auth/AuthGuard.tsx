@@ -12,11 +12,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        if (!loading && !user) {
-          // If not loading and no user, redirect to auth page
-          navigate("/auth");
+        if (!loading) {
+          if (!user) {
+            // If not loading and no user, redirect to auth page
+            console.log("No authenticated user found, redirecting to /auth");
+            navigate("/auth");
+          }
+          setIsCheckingAuth(false);
         }
-        setIsCheckingAuth(false);
       } catch (error: any) {
         console.error("Auth check error:", error);
         toast({
