@@ -25,30 +25,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { MessageSquare, User, Eye, Check, Plus, MessageSquareText } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
 
-interface ForumPost {
-  id: string;
-  title: string;
-  author: string;
-  author_id: string;
-  author_avatar?: string;
-  content: string;
-  date: string;
-  replies: number;
-  views: number;
-  tags: string[];
-  is_answered: boolean;
+interface ForumPost extends Tables<'forum_posts'> {
+  profiles?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
 }
 
-interface ForumReply {
-  id: string;
-  post_id: string;
-  author: string;
-  author_id: string;
-  author_avatar?: string;
-  content: string;
-  date: string;
-  is_accepted_answer: boolean;
+interface ForumReply extends Tables<'forum_replies'> {
+  profiles?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
 }
 
 const Forum = () => {
@@ -81,10 +71,7 @@ const Forum = () => {
           .from('forum_posts')
           .select(`
             *,
-            profiles:profile_id (
-              full_name,
-              avatar_url
-            )
+            profiles:profile_id (full_name, avatar_url)
           `)
           .order('created_at', { ascending: false });
           
@@ -101,17 +88,9 @@ const Forum = () => {
           const replyCount = replyCounts.find(r => r.post_id === post.id)?.count || 0;
           
           return {
-            id: post.id,
-            title: post.title,
-            author: post.profiles?.full_name || 'Anonymous',
-            author_id: post.profile_id,
-            author_avatar: post.profiles?.avatar_url,
-            content: post.content,
-            date: new Date(post.created_at).toISOString().split('T')[0],
+            ...post,
             replies: replyCount,
-            views: post.views || 0,
-            tags: post.tags || [],
-            is_answered: post.is_answered
+            profiles: post.profiles?.[0] || {}
           };
         });
         
@@ -174,10 +153,7 @@ const Forum = () => {
         .from('forum_replies')
         .select(`
           *,
-          profiles:profile_id (
-            full_name,
-            avatar_url
-          )
+          profiles:profile_id (full_name, avatar_url)
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
@@ -185,14 +161,8 @@ const Forum = () => {
       if (error) throw error;
       
       const processedReplies: ForumReply[] = data.map(reply => ({
-        id: reply.id,
-        post_id: reply.post_id,
-        author: reply.profiles?.full_name || 'Anonymous',
-        author_id: reply.profile_id,
-        author_avatar: reply.profiles?.avatar_url,
-        content: reply.content,
-        date: new Date(reply.created_at).toISOString().split('T')[0],
-        is_accepted_answer: reply.is_accepted_answer
+        ...reply,
+        profiles: reply.profiles?.[0] || {}
       }));
       
       setReplies(processedReplies);
