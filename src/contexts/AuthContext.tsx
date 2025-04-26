@@ -24,16 +24,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.email);
+      (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         
         if (event === 'SIGNED_OUT') {
           // Clear user and session on sign out
+          console.log("Signed out event received, clearing user and session");
           setUser(null);
           setSession(null);
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log("Sign in or token refresh detected");
+          setUser(currentSession?.user ?? null);
+          setSession(currentSession);
         } else {
-          setSession(session);
-          setUser(session?.user ?? null);
+          // For any other events, update state with the current session
+          setUser(currentSession?.user ?? null);
+          setSession(currentSession);
         }
         
         setLoading(false);
@@ -44,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getInitialSession = async () => {
       try {
         setLoading(true);
+        console.log("Getting initial session...");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -60,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setSession(null);
         } else {
-          console.log("Initial session:", data?.session?.user?.email);
+          console.log("Initial session:", data?.session?.user?.email || "No session found");
           setSession(data.session);
           setUser(data.session?.user ?? null);
         }

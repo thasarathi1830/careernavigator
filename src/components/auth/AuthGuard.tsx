@@ -16,7 +16,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           if (!user) {
             // If not loading and no user, redirect to auth page
             console.log("No authenticated user found, redirecting to /auth");
-            navigate("/auth");
+            navigate("/auth", { replace: true });
           }
           setIsCheckingAuth(false);
         }
@@ -27,7 +27,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           description: "Please try logging in again",
           variant: "destructive",
         });
-        navigate("/auth");
+        navigate("/auth", { replace: true });
       }
     };
 

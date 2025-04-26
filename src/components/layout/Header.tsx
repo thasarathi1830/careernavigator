@@ -16,7 +16,10 @@ export default function Header() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
+      
+      // Use signOut() method with proper error handling
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         console.error("Sign out error:", error);
         toast({
@@ -25,11 +28,16 @@ export default function Header() {
           variant: "destructive",
         });
       } else {
+        console.log("Successfully signed out");
         toast({
           title: "Success",
           description: "You have been signed out successfully.",
         });
-        navigate("/auth");
+        
+        // Force navigation to auth page after successful sign out
+        setTimeout(() => {
+          navigate("/auth", { replace: true });
+        }, 100);
       }
     } catch (error) {
       console.error("Unexpected error during sign out:", error);
