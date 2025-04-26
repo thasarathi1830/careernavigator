@@ -1,247 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Save, Download, Plus, Trash2, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Save, Download } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Tables } from "@/integrations/supabase/types";
-
-interface ResumeData extends Partial<Tables<'resume_details'>> {
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  location?: string;
-  summary?: string;
-  experience?: Experience[];
-  education?: Education[];
-  skills?: Skill[];
-  projects?: Project[];
-  certifications?: Certification[];
-  languages?: Language[];
-  resume_score?: number;
-}
-
-interface Experience {
-  title: string;
-  company: string;
-  location: string;
-  from_date: string;
-  to_date: string;
-  current: boolean;
-  description: string;
-}
-
-interface Education {
-  institution: string;
-  degree: string;
-  field: string;
-  from_date: string;
-  to_date: string;
-  current: boolean;
-  description: string;
-}
-
-interface Skill {
-  name: string;
-  level: string;
-}
-
-interface Project {
-  name: string;
-  description: string;
-  technologies: string;
-  url: string;
-}
-
-interface Certification {
-  name: string;
-  issuer: string;
-  issue_date: string;
-  expiry_date: string;
-}
-
-interface Language {
-  name: string;
-  proficiency: string;
-}
-
-const initialResumeData: ResumeData = {
-  full_name: "",
-  email: "",
-  phone: "",
-  location: "",
-  summary: "",
-  experience: [],
-  education: [],
-  skills: [],
-  projects: [],
-  certifications: [],
-  languages: [],
-  resume_score: 0
-};
+import PersonalInfoTab from "@/components/resume/PersonalInfoTab";
+import ExperienceTab from "@/components/resume/ExperienceTab";
+import { useResumeData } from "@/hooks/useResumeData";
+import { Experience } from "@/types/resume";
 
 const ResumeBuilder = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("personal");
-  const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const {
+    resumeData,
+    setResumeData,
+    loading,
+    saving,
+    lastSaved,
+    saveResumeData
+  } = useResumeData();
 
-  const calculateResumeScore = (data: ResumeData): number => {
-    let score = 0;
-    const maxScore = 100;
-    
-    if (data.full_name) score += 5;
-    if (data.email) score += 5;
-    if (data.phone) score += 5;
-    if (data.location) score += 5;
-    if (data.summary && data.summary.length > 50) score += 10;
-    
-    const expPoints = Math.min(data.experience.length * 5, 20);
-    score += expPoints;
-    
-    const eduPoints = Math.min(data.education.length * 5, 15);
-    score += eduPoints;
-    
-    const skillPoints = Math.min(data.skills.length, 15);
-    score += skillPoints;
-    
-    const projectPoints = Math.min(data.projects.length * 2, 10);
-    score += projectPoints;
-    
-    const certPoints = Math.min(data.certifications.length, 5);
-    score += certPoints;
-    
-    const langPoints = Math.min(data.languages.length, 5);
-    score += langPoints;
-    
-    return Math.min(Math.round(score), maxScore);
-  };
-
-  useEffect(() => {
-    const fetchResumeData = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("resume_details")
-          .select("*")
-          .eq("profile_id", user.id)
-          .single();
-          
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-        
-        if (data) {
-          setResumeData({
-            ...data,
-            full_name: data.full_name || user.user_metadata?.full_name || "",
-            email: data.email || user.email || "",
-          });
-        } else {
-          setResumeData({
-            ...initialResumeData,
-            full_name: user.user_metadata?.full_name || "",
-            email: user.email || ""
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching resume data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load resume data",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchResumeData();
-  }, [user, toast]);
-
-  useEffect(() => {
-    if (autoSaveTimeout) {
-      clearTimeout(autoSaveTimeout);
-    }
-    
-    if (!loading && user) {
-      const timeout = setTimeout(() => {
-        saveResumeData();
-      }, 2000);
-      
-      setAutoSaveTimeout(timeout);
-    }
-    
-    return () => {
-      if (autoSaveTimeout) {
-        clearTimeout(autoSaveTimeout);
-      }
-    };
-  }, [resumeData, loading, user]);
-
-  const saveResumeData = async () => {
-    if (!user) return;
-    
-    try {
-      setSaving(true);
-      
-      const score = calculateResumeScore(resumeData);
-      
-      const { error } = await supabase
-        .from("resume_details")
-        .upsert({
-          profile_id: user.id,
-          full_name: resumeData.full_name,
-          email: resumeData.email,
-          phone: resumeData.phone,
-          location: resumeData.location,
-          summary: resumeData.summary,
-          experience: resumeData.experience,
-          education: resumeData.education,
-          skills: resumeData.skills,
-          projects: resumeData.projects,
-          certifications: resumeData.certifications,
-          languages: resumeData.languages,
-          resume_score: score
-        }, {
-          onConflict: "profile_id"
-        });
-        
-      if (error) throw error;
-      
-      setLastSaved(new Date());
-      setResumeData(prev => ({
-        ...prev,
-        resume_score: score
-      }));
-      
-    } catch (error) {
-      console.error("Error saving resume data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save resume data",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleInputChange = (field: keyof ResumeData, value: any) => {
+  const handleInputChange = (field: keyof typeof resumeData, value: any) => {
     setResumeData(prev => ({
       ...prev,
       [field]: value
@@ -281,135 +65,10 @@ const ResumeBuilder = () => {
   };
   
   const handleRemoveExperience = (index: number) => {
-    setResumeData(prev => {
-      const updatedExperience = [...prev.experience];
-      updatedExperience.splice(index, 1);
-      return {
-        ...prev,
-        experience: updatedExperience
-      };
-    });
-  };
-
-  const handleAddEducation = () => {
     setResumeData(prev => ({
       ...prev,
-      education: [
-        ...prev.education,
-        {
-          institution: "",
-          degree: "",
-          field: "",
-          from_date: "",
-          to_date: "",
-          current: false,
-          description: ""
-        }
-      ]
+      experience: prev.experience.filter((_, i) => i !== index)
     }));
-  };
-  
-  const handleUpdateEducation = (index: number, field: keyof Education, value: any) => {
-    setResumeData(prev => {
-      const updatedEducation = [...prev.education];
-      updatedEducation[index] = {
-        ...updatedEducation[index],
-        [field]: value
-      };
-      return {
-        ...prev,
-        education: updatedEducation
-      };
-    });
-  };
-  
-  const handleRemoveEducation = (index: number) => {
-    setResumeData(prev => {
-      const updatedEducation = [...prev.education];
-      updatedEducation.splice(index, 1);
-      return {
-        ...prev,
-        education: updatedEducation
-      };
-    });
-  };
-
-  const handleAddSkill = () => {
-    setResumeData(prev => ({
-      ...prev,
-      skills: [
-        ...prev.skills,
-        {
-          name: "",
-          level: "Intermediate"
-        }
-      ]
-    }));
-  };
-  
-  const handleUpdateSkill = (index: number, field: keyof Skill, value: any) => {
-    setResumeData(prev => {
-      const updatedSkills = [...prev.skills];
-      updatedSkills[index] = {
-        ...updatedSkills[index],
-        [field]: value
-      };
-      return {
-        ...prev,
-        skills: updatedSkills
-      };
-    });
-  };
-  
-  const handleRemoveSkill = (index: number) => {
-    setResumeData(prev => {
-      const updatedSkills = [...prev.skills];
-      updatedSkills.splice(index, 1);
-      return {
-        ...prev,
-        skills: updatedSkills
-      };
-    });
-  };
-
-  const handleAddProject = () => {
-    setResumeData(prev => ({
-      ...prev,
-      projects: [
-        ...prev.projects,
-        {
-          name: "",
-          description: "",
-          technologies: "",
-          url: ""
-        }
-      ]
-    }));
-  };
-  
-  const handleUpdateProject = (index: number, field: keyof Project, value: any) => {
-    setResumeData(prev => {
-      const updatedProjects = [...prev.projects];
-      updatedProjects[index] = {
-        ...updatedProjects[index],
-        [field]: value
-      };
-      return {
-        ...prev,
-        projects: updatedProjects
-      };
-    });
-  };
-  
-  const handleRemoveProject = (index: number) => {
-    setResumeData(prev => {
-      const updatedProjects = [...prev.projects];
-      updatedProjects.splice(index, 1);
-      return {
-        ...prev,
-        projects: updatedProjects
-      };
-    });
   };
 
   const handleDownloadPDF = async () => {
@@ -439,7 +98,7 @@ const ResumeBuilder = () => {
       const imgHeight = canvas.height * imgWidth / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`${resumeData.full_name.replace(/\s+/g, '_')}_Resume.pdf`);
+      pdf.save(`${resumeData.full_name?.replace(/\s+/g, '_') || 'resume'}_Resume.pdf`);
       
       toast({
         title: "Success",
@@ -454,6 +113,10 @@ const ResumeBuilder = () => {
       });
     }
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="container py-8">
@@ -515,181 +178,22 @@ const ResumeBuilder = () => {
                   <TabsTrigger value="extras">Extras</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="personal" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <Input
-                        id="fullName"
-                        value={resumeData.full_name}
-                        onChange={(e) => handleInputChange("full_name", e.target.value)}
-                        placeholder="John Doe"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={resumeData.email}
-                        onChange={(e) => handleInputChange("email", e.target.value)}
-                        placeholder="john@example.com"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        value={resumeData.phone}
-                        onChange={(e) => handleInputChange("phone", e.target.value)}
-                        placeholder="+1 123 456 7890"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={resumeData.location}
-                        onChange={(e) => handleInputChange("location", e.target.value)}
-                        placeholder="New York, NY"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="summary">Professional Summary</Label>
-                    <Textarea
-                      id="summary"
-                      value={resumeData.summary}
-                      onChange={(e) => handleInputChange("summary", e.target.value)}
-                      placeholder="Write a brief summary of your professional background and career objectives..."
-                      rows={5}
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={() => setActiveTab("experience")}
-                      className="flex items-center gap-2"
-                    >
-                      Next: Experience <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TabsContent value="personal">
+                  <PersonalInfoTab 
+                    resumeData={resumeData}
+                    onInputChange={handleInputChange}
+                    setActiveTab={setActiveTab}
+                  />
                 </TabsContent>
                 
-                <TabsContent value="experience" className="space-y-6">
-                  {resumeData.experience.map((exp, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4 relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleRemoveExperience(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`exp-title-${index}`}>Job Title</Label>
-                          <Input
-                            id={`exp-title-${index}`}
-                            value={exp.title}
-                            onChange={(e) => handleUpdateExperience(index, "title", e.target.value)}
-                            placeholder="Software Engineer"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`exp-company-${index}`}>Company</Label>
-                          <Input
-                            id={`exp-company-${index}`}
-                            value={exp.company}
-                            onChange={(e) => handleUpdateExperience(index, "company", e.target.value)}
-                            placeholder="ABC Inc."
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`exp-location-${index}`}>Location</Label>
-                          <Input
-                            id={`exp-location-${index}`}
-                            value={exp.location}
-                            onChange={(e) => handleUpdateExperience(index, "location", e.target.value)}
-                            placeholder="New York, NY"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`exp-from-${index}`}>From</Label>
-                          <Input
-                            id={`exp-from-${index}`}
-                            type="date"
-                            value={exp.from_date}
-                            onChange={(e) => handleUpdateExperience(index, "from_date", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`exp-to-${index}`}>To</Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id={`exp-to-${index}`}
-                              type="date"
-                              value={exp.to_date}
-                              onChange={(e) => handleUpdateExperience(index, "to_date", e.target.value)}
-                              disabled={exp.current}
-                            />
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id={`exp-current-${index}`}
-                                checked={exp.current}
-                                onChange={(e) => handleUpdateExperience(index, "current", e.target.checked)}
-                              />
-                              <Label htmlFor={`exp-current-${index}`} className="text-sm">Current</Label>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`exp-desc-${index}`}>Description</Label>
-                        <Textarea
-                          id={`exp-desc-${index}`}
-                          value={exp.description}
-                          onChange={(e) => handleUpdateExperience(index, "description", e.target.value)}
-                          placeholder="Describe your responsibilities and achievements..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    variant="outline"
-                    onClick={handleAddExperience}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Experience
-                  </Button>
-                  
-                  <div className="flex justify-between">
-                    <Button 
-                      variant="ghost"
-                      onClick={() => setActiveTab("personal")}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={() => setActiveTab("education")}
-                      className="flex items-center gap-2"
-                    >
-                      Next: Education <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TabsContent value="experience">
+                  <ExperienceTab 
+                    resumeData={resumeData}
+                    handleAddExperience={handleAddExperience}
+                    handleUpdateExperience={handleUpdateExperience}
+                    handleRemoveExperience={handleRemoveExperience}
+                    setActiveTab={setActiveTab}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="education" className="space-y-6">
