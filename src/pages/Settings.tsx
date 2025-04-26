@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,10 +23,13 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const SettingsPage = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
 
   // Account settings schema
   const accountFormSchema = z.object({
@@ -142,17 +144,53 @@ const SettingsPage = () => {
     },
   });
 
-  const handleSecuritySubmit = (values) => {
-    setSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSaving(false);
+  const handleSecuritySubmit = async (values) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to change your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      
+      // First authenticate with current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email || '',
+        password: values.currentPassword,
+      });
+      
+      if (signInError) {
+        throw new Error("Current password is incorrect");
+      }
+      
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: values.newPassword,
+      });
+      
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+      
       toast({
         title: "Password updated",
         description: "Your password has been changed successfully.",
       });
+      
       securityForm.reset();
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
