@@ -4,9 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
+import { AuthGuard } from "./components/auth/AuthGuard";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import CourseTracker from "./pages/CourseTracker";
@@ -33,65 +34,81 @@ const App = () => (
               <Route
                 path="/"
                 element={
-                  <Layout>
-                    <Index />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <Index />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/profile"
                 element={
-                  <Layout>
-                    <Profile />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <Profile />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/course-tracker"
                 element={
-                  <Layout>
-                    <CourseTracker />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <CourseTracker />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/job-portal"
                 element={
-                  <Layout>
-                    <JobPortal />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <JobPortal />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/projects"
                 element={
-                  <Layout>
-                    <Projects />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <Projects />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/exams"
                 element={
-                  <Layout>
-                    <Exams />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <Exams />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/forum"
                 element={
-                  <Layout>
-                    <Forum />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <Forum />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/settings"
                 element={
-                  <Layout>
-                    <Settings />
-                  </Layout>
+                  <AuthGuard>
+                    <Layout>
+                      <Settings />
+                    </Layout>
+                  </AuthGuard>
                 }
               />
               <Route path="*" element={<NotFound />} />
