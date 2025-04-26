@@ -71,28 +71,28 @@ const Index = () => {
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" role="region" aria-label="Key statistics">
         <StatCard
           title="Current CGPA"
           value={cgpa}
           trend={{ value: 5, positive: true }}
-          icon={<BookOpen className="h-6 w-6" />}
+          icon={<BookOpen className="h-6 w-6" aria-hidden="true" />}
         />
         <StatCard
           title="Completed Courses"
           value="18"
-          icon={<Calendar className="h-6 w-6" />}
+          icon={<Calendar className="h-6 w-6" aria-hidden="true" />}
         />
         <StatCard
           title="Active Projects"
           value="3"
-          icon={<FileText className="h-6 w-6" />}
+          icon={<FileText className="h-6 w-6" aria-hidden="true" />}
         />
         <StatCard
           title="Job Applications"
           value="5"
           trend={{ value: 2, positive: true }}
-          icon={<Briefcase className="h-6 w-6" />}
+          icon={<Briefcase className="h-6 w-6" aria-hidden="true" />}
         />
       </div>
 
@@ -101,16 +101,14 @@ const Index = () => {
           title="Upcoming Deadlines" 
           aria-label="List of upcoming deadlines"
         >
-          <div 
+          <ul 
             className="space-y-4"
-            role="list"
             aria-label="Upcoming deadlines list"
           >
             {upcomingDeadlines.map((item) => (
-              <div
+              <li
                 key={item.id}
                 className="flex items-center justify-between border-b pb-4 last:border-0"
-                role="listitem"
                 aria-label={`${item.title} due on ${new Date(item.date).toLocaleDateString()}`}
               >
                 <div className="flex items-start gap-3">
@@ -148,9 +146,9 @@ const Index = () => {
                 >
                   View
                 </Button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
           <div className="mt-4">
             <Button
               variant="outline"
@@ -162,36 +160,46 @@ const Index = () => {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Recent Job Opportunities">
-          <div className="space-y-4">
+        <DashboardCard 
+          title="Recent Job Opportunities" 
+          aria-label="List of recent job opportunities"
+        >
+          <ul 
+            className="space-y-4"
+            aria-label="Recent job opportunities list"
+          >
             {recentJobs.map((job) => (
-              <div
+              <li
                 key={job.id}
                 className="flex items-start justify-between border-b pb-4 last:border-0"
+                aria-label={`${job.title} at ${job.company} in ${job.location}, posted ${job.posted}`}
               >
                 <div>
                   <div className="font-medium">{job.title}</div>
                   <div className="text-sm text-gray-500">
-                    {job.company} • {job.location}
+                    <span className="sr-only">Company:</span> {job.company} • 
+                    <span className="sr-only">Location:</span> {job.location}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    Posted {job.posted}
+                    <span className="sr-only">Posted:</span> Posted {job.posted}
                   </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
                   className="border-education-primary text-education-primary hover:bg-education-light"
+                  aria-label={`Apply for ${job.title} at ${job.company}`}
                 >
                   Apply
                 </Button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
           <div className="mt-4">
             <Button
               variant="outline"
               className="w-full border-education-primary text-education-primary hover:bg-education-light"
+              aria-label="Browse all available job opportunities"
             >
               Browse All Jobs
             </Button>
