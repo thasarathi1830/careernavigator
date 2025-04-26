@@ -83,12 +83,12 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
       try {
         setIsLoading(true);
         
-        // Using explicit typing to avoid type errors
+        // Using type casting to avoid TypeScript errors
         const { data, error } = await supabase
-          .from('user_preferences')
+          .from('user_preferences' as any)
           .select('*')
           .eq('profile_id', user.id)
-          .single<UserPreferencesData>();
+          .single();
 
         if (error && error.code !== "PGRST116") { // PGRST116 means no rows returned
           throw error;
@@ -113,17 +113,16 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
             reducedMotion: false,
           };
 
-          // Using any type here to bypass TypeScript checking since the table exists in the database
-          // but not in the generated types
+          // Using type casting to bypass TypeScript checking
           const { error: insertError } = await supabase
-            .from('user_preferences')
+            .from('user_preferences' as any)
             .insert({
               profile_id: user.id,
               theme,
               font_size: defaultPreferences.fontSize,
               color_blind_mode: defaultPreferences.colorBlindMode,
               reduced_motion: defaultPreferences.reducedMotion,
-            } as any);
+            });
 
           if (insertError) throw insertError;
           
@@ -153,16 +152,16 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
       
       // Update database if user is logged in
       if (user) {
-        // Using any type to bypass TypeScript checking for the same reason
+        // Using type casting to bypass TypeScript checking
         const { error } = await supabase
-          .from('user_preferences')
+          .from('user_preferences' as any)
           .upsert({
             profile_id: user.id,
             theme: newTheme,
             font_size: preferences?.fontSize || "medium",
             color_blind_mode: preferences?.colorBlindMode || false,
             reduced_motion: preferences?.reducedMotion || false,
-          } as any, { onConflict: "profile_id" });
+          }, { onConflict: "profile_id" });
 
         if (error) throw error;
         
@@ -196,14 +195,14 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
 
       // Update database
       const { error } = await supabase
-        .from('user_preferences')
+        .from('user_preferences' as any)
         .upsert({
           profile_id: user.id,
           theme: updatedPreferences.theme,
           font_size: updatedPreferences.fontSize,
           color_blind_mode: updatedPreferences.colorBlindMode,
           reduced_motion: updatedPreferences.reducedMotion,
-        } as any, { onConflict: "profile_id" });
+        }, { onConflict: "profile_id" });
 
       if (error) throw error;
       
