@@ -22,8 +22,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Plus, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const CourseTracker = () => {
   const { toast } = useToast();
@@ -39,43 +48,7 @@ const CourseTracker = () => {
     { semester: "8th (Even) Semester", sgpa: 8.85 }
   ]);
   const [newSemester, setNewSemester] = useState({ semester: "", sgpa: "" });
-
-  const calculateCGPA = () => {
-    if (semesterGPAs.length === 0) return "0.00";
-    const totalGPA = semesterGPAs.reduce((sum, sem) => sum + sem.sgpa, 0);
-    return (totalGPA / semesterGPAs.length).toFixed(2);
-  };
-
-  const handleAddSemester = () => {
-    if (newSemester.semester && newSemester.sgpa) {
-      const sgpa = parseFloat(newSemester.sgpa);
-      if (sgpa < 0 || sgpa > 10) {
-        toast({
-          title: "Invalid SGPA",
-          description: "SGPA must be between 0 and 10",
-          variant: "destructive",
-        });
-        return;
-      }
-      setSemesterGPAs([...semesterGPAs, { ...newSemester, sgpa }]);
-      setNewSemester({ semester: "", sgpa: "" });
-      toast({
-        title: "Semester Added",
-        description: "New semester GPA has been added successfully.",
-      });
-    }
-  };
-
-  const handleRemoveSemester = (semesterToRemove: string) => {
-    setSemesterGPAs(semesterGPAs.filter(sem => sem.semester !== semesterToRemove));
-    toast({
-      title: "Semester Removed",
-      description: "The semester has been removed successfully.",
-    });
-  };
-
   const [cgpa, setCgpa] = useState("8.75");
-
   const [courseGrades, setCourseGrades] = useState([
     { name: "CS101", grade: "A", points: 4.0, marksObtained: 92, totalMarks: 100 },
     { name: "CS201", grade: "B+", points: 3.3, marksObtained: 85, totalMarks: 100 },
@@ -86,16 +59,7 @@ const CourseTracker = () => {
     { name: "CS350", grade: "A-", points: 3.7, marksObtained: 87, totalMarks: 100 },
     { name: "CS430", grade: "B+", points: 3.3, marksObtained: 83, totalMarks: 100 },
   ]);
-
-  const [newCourse, setNewCourse] = useState({
-    name: "",
-    grade: "",
-    points: 0,
-    marksObtained: "",
-    totalMarks: "100"
-  });
-
-  const gpaTrend = [
+  const [gpaTrend, setGpaTrend] = useState([
     { semester: "1st (Odd)", gpa: 8.4 },
     { semester: "2nd (Even)", gpa: 8.5 },
     { semester: "3rd (Odd)", gpa: 8.7 },
@@ -104,9 +68,8 @@ const CourseTracker = () => {
     { semester: "6th (Even)", gpa: 8.6 },
     { semester: "7th (Odd)", gpa: 8.9 },
     { semester: "8th (Even)", gpa: 8.85 }
-  ];
-
-  const currentCourses = [
+  ]);
+  const [currentCourses, setCurrentCourses] = useState([
     {
       code: "CS450",
       name: "Operating Systems",
@@ -151,7 +114,50 @@ const CourseTracker = () => {
         { name: "Midterm Exam", score: 76, total: 100 },
       ],
     },
-  ];
+  ]);
+
+  const [isAddingCourse, setIsAddingCourse] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    name: "",
+    code: "",
+    grade: "",
+    marksObtained: "",
+    totalMarks: "100",
+  });
+
+  const calculateCGPA = () => {
+    if (semesterGPAs.length === 0) return "0.00";
+    const totalGPA = semesterGPAs.reduce((sum, sem) => sum + sem.sgpa, 0);
+    return (totalGPA / semesterGPAs.length).toFixed(2);
+  };
+
+  const handleAddSemester = () => {
+    if (newSemester.semester && newSemester.sgpa) {
+      const sgpa = parseFloat(newSemester.sgpa);
+      if (sgpa < 0 || sgpa > 10) {
+        toast({
+          title: "Invalid SGPA",
+          description: "SGPA must be between 0 and 10",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSemesterGPAs([...semesterGPAs, { ...newSemester, sgpa }]);
+      setNewSemester({ semester: "", sgpa: "" });
+      toast({
+        title: "Semester Added",
+        description: "New semester GPA has been added successfully.",
+      });
+    }
+  };
+
+  const handleRemoveSemester = (semesterToRemove: string) => {
+    setSemesterGPAs(semesterGPAs.filter(sem => sem.semester !== semesterToRemove));
+    toast({
+      title: "Semester Removed",
+      description: "The semester has been removed successfully.",
+    });
+  };
 
   const getGradeColor = (grade: string) => {
     switch (grade.charAt(0)) {
@@ -168,39 +174,6 @@ const CourseTracker = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const handleAddCourse = () => {
-    if (newCourse.name && newCourse.grade && newCourse.marksObtained) {
-      setCourseGrades([...courseGrades, {
-        ...newCourse,
-        points: calculatePoints(newCourse.grade),
-        marksObtained: Number(newCourse.marksObtained),
-        totalMarks: Number(newCourse.totalMarks)
-      }]);
-      setNewCourse({
-        name: "",
-        grade: "",
-        points: 0,
-        marksObtained: "",
-        totalMarks: "100"
-      });
-      toast({
-        title: "Course Added",
-        description: "The new course has been added successfully."
-      });
-    }
-  };
-
-  const handleUpdateCourse = (index: number, field: string, value: string) => {
-    const updatedCourses = [...courseGrades];
-    updatedCourses[index] = {
-      ...updatedCourses[index],
-      [field]: field === 'marksObtained' ? Number(value) : value,
-      points: field === 'grade' ? calculatePoints(value) : updatedCourses[index].points
-    };
-    setCourseGrades(updatedCourses);
-    updateCGPA(updatedCourses);
   };
 
   const calculatePoints = (grade: string): number => {
@@ -220,19 +193,51 @@ const CourseTracker = () => {
     return gradePoints[grade] || 0;
   };
 
-  const updateCGPA = (courses: typeof courseGrades) => {
-    const totalPoints = courses.reduce((sum, course) => sum + course.points, 0);
-    const newCGPA = (totalPoints / courses.length).toFixed(2);
-    setCgpa(newCGPA);
-  };
+  const handleAddCourse = () => {
+    if (!newCourse.name || !newCourse.code || !newCourse.grade || !newCourse.marksObtained) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const handleRemoveCourse = (index: number) => {
-    const updatedCourses = courseGrades.filter((_, i) => i !== index);
-    setCourseGrades(updatedCourses);
-    updateCGPA(updatedCourses);
+    const marks = parseInt(newCourse.marksObtained);
+    const total = parseInt(newCourse.totalMarks);
+
+    if (isNaN(marks) || isNaN(total) || marks > total) {
+      toast({
+        title: "Invalid Marks",
+        description: "Please enter valid marks",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCourseGrades([
+      ...courseGrades,
+      {
+        name: newCourse.code,
+        grade: newCourse.grade,
+        points: calculatePoints(newCourse.grade),
+        marksObtained: marks,
+        totalMarks: total,
+      },
+    ]);
+
+    setNewCourse({
+      name: "",
+      code: "",
+      grade: "",
+      marksObtained: "",
+      totalMarks: "100",
+    });
+    setIsAddingCourse(false);
+
     toast({
-      title: "Course Removed",
-      description: "The course has been removed successfully."
+      title: "Course Added",
+      description: "New course has been added successfully",
     });
   };
 
@@ -314,7 +319,7 @@ const CourseTracker = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="current">
+      <Tabs defaultValue="past">
         <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="current">Current Courses</TabsTrigger>
           <TabsTrigger value="past">Past Courses</TabsTrigger>
@@ -385,145 +390,124 @@ const CourseTracker = () => {
         <TabsContent value="past">
           <Card>
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-medium">Past Courses</h3>
-                {editMode && (
-                  <div className="flex gap-4 items-end">
-                    <div className="grid grid-cols-5 gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsAddingCourse(!isAddingCourse)}
+                  aria-label={isAddingCourse ? "Cancel adding course" : "Add new course"}
+                >
+                  {isAddingCourse ? (
+                    <>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Course
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {isAddingCourse && (
+                <div className="mb-6 p-4 border rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="courseName">Course Name</Label>
                       <Input
-                        placeholder="Course Code"
+                        id="courseName"
                         value={newCourse.name}
                         onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                        placeholder="e.g., Introduction to Computer Science"
                       />
-                      <Select 
+                    </div>
+                    <div>
+                      <Label htmlFor="courseCode">Course Code</Label>
+                      <Input
+                        id="courseCode"
+                        value={newCourse.code}
+                        onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
+                        placeholder="e.g., CS101"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="grade">Grade</Label>
+                      <Select
                         value={newCourse.grade}
                         onValueChange={(value) => setNewCourse({ ...newCourse, grade: value })}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Grade" />
+                        <SelectTrigger id="grade">
+                          <SelectValue placeholder="Select grade" />
                         </SelectTrigger>
                         <SelectContent>
-                          {['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'].map((grade) => (
-                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                          ))}
+                          {["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F"].map(
+                            (grade) => (
+                              <SelectItem key={grade} value={grade}>
+                                {grade}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
-                      <Input
-                        placeholder="Marks"
-                        type="number"
-                        value={newCourse.marksObtained}
-                        onChange={(e) => setNewCourse({ ...newCourse, marksObtained: e.target.value })}
-                        min="0"
-                        max={newCourse.totalMarks}
-                      />
-                      <Input
-                        placeholder="Total Marks"
-                        type="number"
-                        value={newCourse.totalMarks}
-                        onChange={(e) => setNewCourse({ ...newCourse, totalMarks: e.target.value })}
-                        min="0"
-                      />
-                      <Button onClick={handleAddCourse}>Add</Button>
+                    </div>
+                    <div>
+                      <Label htmlFor="marks">Marks Obtained</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="marks"
+                          type="number"
+                          value={newCourse.marksObtained}
+                          onChange={(e) =>
+                            setNewCourse({ ...newCourse, marksObtained: e.target.value })
+                          }
+                          placeholder="Marks obtained"
+                          min="0"
+                          max={newCourse.totalMarks}
+                        />
+                        <span>/</span>
+                        <Input
+                          type="number"
+                          value={newCourse.totalMarks}
+                          onChange={(e) =>
+                            setNewCourse({ ...newCourse, totalMarks: e.target.value })
+                          }
+                          min="0"
+                          className="w-24"
+                        />
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
+                  <Button onClick={handleAddCourse} className="mt-4">
+                    Add Course
+                  </Button>
+                </div>
+              )}
 
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="w-full">
+                  <thead>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Course Code
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Grade
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Marks
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Points
-                      </th>
-                      {editMode && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      )}
+                      <th className="text-left py-2">Course Code</th>
+                      <th className="text-left py-2">Grade</th>
+                      <th className="text-left py-2">Marks</th>
+                      <th className="text-left py-2">Points</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody>
                     {courseGrades.map((course, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {editMode ? (
-                            <Input
-                              value={course.name}
-                              onChange={(e) => handleUpdateCourse(index, 'name', e.target.value)}
-                            />
-                          ) : (
-                            course.name
-                          )}
+                      <tr key={index} className="border-t">
+                        <td className="py-3">{course.name}</td>
+                        <td className="py-3">
+                          <span className={`px-2 py-1 rounded-full text-sm ${getGradeColor(course.grade)}`}>
+                            {course.grade}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {editMode ? (
-                            <Select
-                              value={course.grade}
-                              onValueChange={(value) => handleUpdateCourse(index, 'grade', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue>{course.grade}</SelectValue>
-                              </SelectTrigger>
-                              <SelectContent>
-                                {['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'].map((grade) => (
-                                  <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getGradeColor(course.grade)}`}>
-                              {course.grade}
-                            </span>
-                          )}
+                        <td className="py-3">
+                          {course.marksObtained}/{course.totalMarks}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {editMode ? (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                value={course.marksObtained}
-                                onChange={(e) => handleUpdateCourse(index, 'marksObtained', e.target.value)}
-                                className="w-20"
-                                min="0"
-                                max={course.totalMarks}
-                              />
-                              <span>/</span>
-                              <Input
-                                type="number"
-                                value={course.totalMarks}
-                                onChange={(e) => handleUpdateCourse(index, 'totalMarks', e.target.value)}
-                                className="w-20"
-                                min="0"
-                              />
-                            </div>
-                          ) : (
-                            `${course.marksObtained}/${course.totalMarks}`
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {course.points.toFixed(1)}
-                        </td>
-                        {editMode && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRemoveCourse(index)}
-                            >
-                              Remove
-                            </Button>
-                          </td>
-                        )}
+                        <td className="py-3">{course.points.toFixed(1)}</td>
                       </tr>
                     ))}
                   </tbody>
