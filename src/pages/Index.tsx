@@ -1,3 +1,4 @@
+
 import { BookOpen, Briefcase, Calendar, FileText } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
@@ -96,12 +97,21 @@ const Index = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <DashboardCard title="Upcoming Deadlines">
-          <div className="space-y-4">
+        <DashboardCard 
+          title="Upcoming Deadlines" 
+          aria-label="List of upcoming deadlines"
+        >
+          <div 
+            className="space-y-4"
+            role="list"
+            aria-label="Upcoming deadlines list"
+          >
             {upcomingDeadlines.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between border-b pb-4 last:border-0"
+                role="listitem"
+                aria-label={`${item.title} due on ${new Date(item.date).toLocaleDateString()}`}
               >
                 <div className="flex items-start gap-3">
                   <div
@@ -112,6 +122,7 @@ const Index = () => {
                         ? "bg-purple-100 text-purple-600"
                         : "bg-blue-100 text-blue-600"
                     }`}
+                    aria-hidden="true"
                   >
                     {item.type === "exam" ? (
                       <Calendar className="h-5 w-5" />
@@ -124,8 +135,8 @@ const Index = () => {
                   <div>
                     <div className="font-medium">{item.title}</div>
                     <div className="text-sm text-gray-500">
-                      {item.course} • Due{" "}
-                      {new Date(item.date).toLocaleDateString()}
+                      <span className="sr-only">Course:</span> {item.course} • 
+                      <span className="sr-only">Due date:</span> {new Date(item.date).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -133,6 +144,7 @@ const Index = () => {
                   size="sm"
                   variant="ghost"
                   className="text-education-primary hover:text-education-primary hover:bg-education-light"
+                  aria-label={`View details for ${item.title}`}
                 >
                   View
                 </Button>
@@ -143,6 +155,7 @@ const Index = () => {
             <Button
               variant="outline"
               className="w-full border-education-primary text-education-primary hover:bg-education-light"
+              aria-label="View all upcoming deadlines"
             >
               See All Deadlines
             </Button>
