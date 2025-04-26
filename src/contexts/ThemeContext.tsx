@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +20,6 @@ interface ThemeContextType {
   isLoading: boolean;
 }
 
-// Define interface for the user_preferences table data
 interface UserPreferencesData {
   id: string;
   profile_id: string;
@@ -54,7 +52,6 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
   const [preferences, setPreferences] = useState<UserThemePreferences | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Apply theme to DOM
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
@@ -72,7 +69,6 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
     root.classList.add(theme);
   }, [theme]);
 
-  // Load user preferences from database
   useEffect(() => {
     const fetchUserPreferences = async () => {
       if (!user) {
@@ -83,29 +79,31 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
       try {
         setIsLoading(true);
         
-        // Using type casting to avoid TypeScript errors
         const { data, error } = await supabase
-          .from('user_preferences' as any)
+          .from('user_preferences')
           .select('*')
           .eq('profile_id', user.id)
-          .single();
+          .single() as { 
+            data: UserPreferencesData | null, 
+            error: any 
+          };
 
-        if (error && error.code !== "PGRST116") { // PGRST116 means no rows returned
+        if (error && error.code !== "PGRST116") {
           throw error;
         }
 
         if (data) {
-          // User has preferences
-          setPreferences({
+          const userPreferences: UserThemePreferences = {
             theme: data.theme as Theme,
             fontSize: data.font_size,
             colorBlindMode: data.color_blind_mode,
             reducedMotion: data.reduced_motion,
-          });
+          };
+
+          setPreferences(userPreferences);
           setThemeState(data.theme as Theme);
           localStorage.setItem(storageKey, data.theme);
         } else {
-          // Create default preferences
           const defaultPreferences = {
             theme,
             fontSize: "medium",
@@ -113,9 +111,8 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
             reducedMotion: false,
           };
 
-          // Using type casting to bypass TypeScript checking
           const { error: insertError } = await supabase
-            .from('user_preferences' as any)
+            .from('user_preferences')
             .insert({
               profile_id: user.id,
               theme,
@@ -143,18 +140,14 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
     fetchUserPreferences();
   }, [user, storageKey, theme, toast]);
 
-  // Update theme and save to database
   const setTheme = async (newTheme: Theme) => {
     try {
-      // Update local state and localStorage
       setThemeState(newTheme);
       localStorage.setItem(storageKey, newTheme);
       
-      // Update database if user is logged in
       if (user) {
-        // Using type casting to bypass TypeScript checking
         const { error } = await supabase
-          .from('user_preferences' as any)
+          .from('user_preferences')
           .upsert({
             profile_id: user.id,
             theme: newTheme,
@@ -177,7 +170,6 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
     }
   };
 
-  // Update user preferences
   const updatePreferences = async (newPreferences: Partial<UserThemePreferences>) => {
     try {
       if (!user) return;
@@ -187,15 +179,13 @@ export const ThemeProvider = ({ children, defaultTheme = "system", storageKey = 
         ...newPreferences 
       } as UserThemePreferences;
 
-      // Update theme if it changed
       if (newPreferences.theme && newPreferences.theme !== theme) {
         setThemeState(newPreferences.theme);
         localStorage.setItem(storageKey, newPreferences.theme);
       }
 
-      // Update database
       const { error } = await supabase
-        .from('user_preferences' as any)
+        .from('user_preferences')
         .upsert({
           profile_id: user.id,
           theme: updatedPreferences.theme,

@@ -7,6 +7,8 @@ export interface SemesterCourse {
   credits: number;
   grade: string;
   semester_id: string;
+  semester_name: string;
+  sgpa: number;
   created_at: string;
 }
 

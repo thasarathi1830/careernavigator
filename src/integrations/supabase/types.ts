@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      assignments: {
+        Row: {
+          completed: boolean
+          course: string
+          created_at: string
+          due_date: string
+          id: string
+          name: string
+          profile_id: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          course: string
+          created_at?: string
+          due_date: string
+          id?: string
+          name: string
+          profile_id: string
+          status: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          course?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          name?: string
+          profile_id?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           created_at: string
@@ -265,6 +304,39 @@ export type Database = {
           university?: string | null
           updated_at?: string
           year?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          color_blind_mode: boolean
+          created_at: string
+          font_size: string
+          id: string
+          profile_id: string
+          reduced_motion: boolean
+          theme: string
+          updated_at: string
+        }
+        Insert: {
+          color_blind_mode?: boolean
+          created_at?: string
+          font_size?: string
+          id?: string
+          profile_id: string
+          reduced_motion?: boolean
+          theme?: string
+          updated_at?: string
+        }
+        Update: {
+          color_blind_mode?: boolean
+          created_at?: string
+          font_size?: string
+          id?: string
+          profile_id?: string
+          reduced_motion?: boolean
+          theme?: string
+          updated_at?: string
         }
         Relationships: []
       }
