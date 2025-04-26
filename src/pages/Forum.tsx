@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageSquare, User, Eye, MessageSquareCheck, Plus } from "lucide-react";
+import { MessageSquare, User, Eye, Check, Plus, MessageSquareText } from "lucide-react";
 
 interface ForumPost {
   id: string;
@@ -75,11 +74,9 @@ const Forum = () => {
   
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fetch forum posts
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        // Fetch posts with author info
         const { data: postsData, error: postsError } = await supabase
           .from('forum_posts')
           .select(`
@@ -93,7 +90,6 @@ const Forum = () => {
           
         if (postsError) throw postsError;
         
-        // Fetch reply counts
         const { data: replyCounts, error: replyCountError } = await supabase
           .from('forum_replies')
           .select('post_id, count', { count: 'exact' })
@@ -101,7 +97,6 @@ const Forum = () => {
           
         if (replyCountError) throw replyCountError;
         
-        // Process posts data
         const processedPosts: ForumPost[] = postsData.map(post => {
           const replyCount = replyCounts.find(r => r.post_id === post.id)?.count || 0;
           
@@ -135,27 +130,25 @@ const Forum = () => {
     
     fetchPosts();
     
-    // Set up real-time subscription for posts
     const postsChannel = supabase
       .channel('public:forum_posts')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'forum_posts' }, 
         () => {
-          fetchPosts(); // Refetch posts on any changes
+          fetchPosts();
         }
       )
       .subscribe();
       
-    // Set up real-time subscription for replies
     const repliesChannel = supabase
       .channel('public:forum_replies')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'forum_replies' }, 
         () => {
           if (selectedPost) {
-            fetchReplies(selectedPost.id); // Refetch replies for current post
+            fetchReplies(selectedPost.id);
           }
-          fetchPosts(); // Also update the posts to get updated reply counts
+          fetchPosts();
         }
       )
       .subscribe();
@@ -172,13 +165,11 @@ const Forum = () => {
     try {
       setLoadingReplies(true);
       
-      // Increment view count
       await supabase
         .from('forum_posts')
         .update({ views: discussions.find(d => d.id === postId)?.views + 1 || 1 })
         .eq('id', postId);
       
-      // Fetch replies with author info
       const { data, error } = await supabase
         .from('forum_replies')
         .select(`
@@ -193,7 +184,6 @@ const Forum = () => {
         
       if (error) throw error;
       
-      // Process replies data
       const processedReplies: ForumReply[] = data.map(reply => ({
         id: reply.id,
         post_id: reply.post_id,
@@ -320,7 +310,6 @@ const Forum = () => {
     if (!user || !selectedPost) return;
     
     try {
-      // Check if user is the post author
       if (user.id !== selectedPost.author_id) {
         toast({
           title: "Error",
@@ -330,13 +319,11 @@ const Forum = () => {
         return;
       }
       
-      // First clear any existing accepted answers
       await supabase
         .from('forum_replies')
         .update({ is_accepted_answer: false })
         .eq('post_id', selectedPost.id);
       
-      // Mark the selected reply as accepted
       const { error } = await supabase
         .from('forum_replies')
         .update({ is_accepted_answer: true })
@@ -344,13 +331,11 @@ const Forum = () => {
         
       if (error) throw error;
       
-      // Mark the post as answered
       await supabase
         .from('forum_posts')
         .update({ is_answered: true })
         .eq('id', selectedPost.id);
       
-      // Update local state for selected post
       setSelectedPost({
         ...selectedPost,
         is_answered: true
@@ -376,15 +361,12 @@ const Forum = () => {
     setSheetOpen(true);
   };
 
-  // Filter discussions based on search term and active tab
   const filteredDiscussions = discussions.filter(discussion => {
-    // Search filter
     const matchesSearch = 
       discussion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       discussion.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       discussion.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // Tab filter
     let matchesTab = true;
     if (activeTab === "popular") {
       matchesTab = discussion.views > 10 || discussion.replies > 5;
@@ -501,7 +483,7 @@ const Forum = () => {
                 <div className="flex justify-between">
                   <CardTitle className="text-lg font-semibold text-education-primary hover:text-education-primary/80 flex items-center gap-2">
                     {discussion.is_answered && (
-                      <MessageSquareCheck className="h-4 w-4 text-green-500" aria-label="Answered question" />
+                      <Check className="h-4 w-4 text-green-500" aria-label="Answered question" />
                     )}
                     {discussion.title}
                   </CardTitle>
@@ -565,13 +547,12 @@ const Forum = () => {
         )}
       </div>
       
-      {/* Discussion Detail Side Panel */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="w-full sm:max-w-lg overflow-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="flex items-center gap-2">
               {selectedPost?.is_answered && (
-                <MessageSquareCheck className="h-4 w-4 text-green-500" aria-label="Answered question" />
+                <Check className="h-4 w-4 text-green-500" aria-label="Answered question" />
               )}
               {selectedPost?.title}
             </SheetTitle>
@@ -581,7 +562,6 @@ const Forum = () => {
           </SheetHeader>
           
           <div className="mt-4 space-y-6">
-            {/* Original post */}
             <div className="border rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 <Avatar>
@@ -612,7 +592,6 @@ const Forum = () => {
               </div>
             </div>
             
-            {/* Replies */}
             <div className="space-y-4">
               <h3 className="font-medium">{replies.length} Replies</h3>
               
@@ -671,7 +650,6 @@ const Forum = () => {
               )}
             </div>
             
-            {/* Reply form */}
             {user ? (
               <div className="border rounded-lg p-4">
                 <h3 className="font-medium mb-2">Your Reply</h3>
