@@ -1,154 +1,162 @@
-import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  Sheet,
-  SheetContent,
-  SheetDescription, 
-  SheetHeader, 
-  SheetTitle 
-} from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { MessageSquare, User, Eye, Check, Plus, MessageSquareText } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 
-interface ForumPost extends Tables<'forum_posts'> {
+interface ExtendedForumPost extends Tables<'forum_posts'> {
+  author: string;
+  author_id: string;
+  author_avatar?: string;
+  date: string;
+  replies: number;
   profiles?: {
     full_name?: string;
     avatar_url?: string;
-  };
+  }[];
 }
 
-interface ForumReply extends Tables<'forum_replies'> {
+interface ExtendedForumReply extends Tables<'forum_replies'> {
+  author: string;
+  author_id: string;
+  author_avatar?: string;
+  date: string;
   profiles?: {
     full_name?: string;
     avatar_url?: string;
-  };
+  }[];
 }
 
 const Forum = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [discussions, setDiscussions] = useState<ForumPost[]>([]);
-  const [replies, setReplies] = useState<ForumReply[]>([]);
+  const [posts, setPosts] = useState<ExtendedForumPost[]>([]);
+  const [replies, setReplies] = useState<ExtendedForumReply[]>([]);
+  const [selectedPost, setSelectedPost] = useState<ExtendedForumPost | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingReplies, setLoadingReplies] = useState(false);
-  
-  const [newPost, setNewPost] = useState({
-    title: "",
-    content: "",
-    tags: ""
-  });
-
+  const [newPost, setNewPost] = useState({ title: "", content: "", tags: "" });
   const [newReply, setNewReply] = useState("");
-  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  
-  const replyInputRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
+
+  const fetchPosts = async () => {
+    try {
+      // First, get all posts with their profiles
+      const { data: postsData, error: postsError } = await supabase
+        .from('forum_posts')
+        .select(`
+          *,
+          profiles:profile_id (full_name, avatar_url)
+        `)
+        .order('created_at', { ascending: false });
+        
+      if (postsError) throw postsError;
+
+      // Get reply counts for all posts
+      const { data: replyCounts, error: replyError } = await supabase
+        .from('forum_replies')
+        .select('post_id, count', { count: 'exact' })
+        .select();
+
+      if (replyError) throw replyError;
+
+      const processedPosts: ExtendedForumPost[] = postsData.map(post => {
+        const replyCount = replyCounts.filter(r => r.post_id === post.id).length;
+        
+        return {
+          ...post,
+          author: post.profiles?.[0]?.full_name || 'Anonymous',
+          author_id: post.profile_id,
+          author_avatar: post.profiles?.[0]?.avatar_url,
+          date: new Date(post.created_at).toISOString().split('T')[0],
+          replies: replyCount,
+        };
+      });
+      
+      setPosts(processedPosts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load forum posts",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const { data: postsData, error: postsError } = await supabase
-          .from('forum_posts')
-          .select(`
-            *,
-            profiles:profile_id (full_name, avatar_url)
-          `)
-          .order('created_at', { ascending: false });
-          
-        if (postsError) throw postsError;
-        
-        const { data: replyCounts, error: replyCountError } = await supabase
-          .from('forum_replies')
-          .select('post_id, count', { count: 'exact' })
-          .group('post_id');
-          
-        if (replyCountError) throw replyCountError;
-        
-        const processedPosts: ForumPost[] = postsData.map(post => {
-          const replyCount = replyCounts.find(r => r.post_id === post.id)?.count || 0;
-          
-          return {
-            ...post,
-            replies: replyCount,
-            profiles: post.profiles?.[0] || {}
-          };
-        });
-        
-        setDiscussions(processedPosts);
-      } catch (error) {
-        console.error("Error fetching forum posts:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load discussions",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchPosts();
-    
-    const postsChannel = supabase
-      .channel('public:forum_posts')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'forum_posts' }, 
-        () => {
-          fetchPosts();
-        }
-      )
-      .subscribe();
-      
-    const repliesChannel = supabase
-      .channel('public:forum_replies')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'forum_replies' }, 
-        () => {
-          if (selectedPost) {
-            fetchReplies(selectedPost.id);
-          }
-          fetchPosts();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(postsChannel);
-      supabase.removeChannel(repliesChannel);
-    };
-  }, [toast, selectedPost]);
+  }, []);
+
+  const createPost = async () => {
+    if (!newPost.title.trim() || !newPost.content.trim()) {
+      toast({
+        title: "Error",
+        description: "Title and content are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const tags = newPost.tags
+        .split(",")
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+      const { data, error } = await supabase
+        .from('forum_posts')
+        .insert([
+          {
+            title: newPost.title,
+            content: newPost.content,
+            tags,
+            profile_id: (await supabase.auth.getUser()).data.user?.id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Post created successfully",
+      });
+
+      setNewPost({ title: "", content: "", tags: "" });
+      await fetchPosts();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create post",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchReplies = async (postId: string) => {
-    if (!postId) return;
-    
     try {
-      setLoadingReplies(true);
-      
-      await supabase
-        .from('forum_posts')
-        .update({ views: discussions.find(d => d.id === postId)?.views + 1 || 1 })
-        .eq('id', postId);
-      
       const { data, error } = await supabase
         .from('forum_replies')
         .select(`
@@ -159,495 +167,309 @@ const Forum = () => {
         .order('created_at', { ascending: true });
         
       if (error) throw error;
-      
-      const processedReplies: ForumReply[] = data.map(reply => ({
+
+      const processedReplies: ExtendedForumReply[] = data.map(reply => ({
         ...reply,
-        profiles: reply.profiles?.[0] || {}
+        author: reply.profiles?.[0]?.full_name || 'Anonymous',
+        author_id: reply.profile_id,
+        author_avatar: reply.profiles?.[0]?.avatar_url,
+        date: new Date(reply.created_at).toISOString().split('T')[0],
       }));
-      
+
       setReplies(processedReplies);
     } catch (error) {
-      console.error("Error fetching replies:", error);
+      console.error('Error fetching replies:', error);
       toast({
         title: "Error",
-        description: "Failed to load discussion replies",
-        variant: "destructive"
+        description: "Failed to load replies",
+        variant: "destructive",
       });
-    } finally {
-      setLoadingReplies(false);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewPost({ ...newPost, [name]: value });
-  };
-
-  const handleAddPost = async () => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create a post",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      const tags = newPost.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-      
-      const { error } = await supabase
-        .from('forum_posts')
-        .insert({
-          profile_id: user.id,
-          title: newPost.title,
-          content: newPost.content,
-          tags: tags,
-          views: 0
-        });
-        
-      if (error) throw error;
-      
-      setNewPost({
-        title: "",
-        content: "",
-        tags: ""
-      });
-      
-      setDialogOpen(false);
-      
-      toast({
-        title: "Success",
-        description: "Discussion post created successfully"
-      });
-    } catch (error) {
-      console.error("Error creating post:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create discussion post",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleAddReply = async () => {
-    if (!user || !selectedPost) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to reply",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const createReply = async (postId: string) => {
     if (!newReply.trim()) {
       toast({
         title: "Error",
-        description: "Reply content cannot be empty",
-        variant: "destructive"
+        description: "Reply content is required",
+        variant: "destructive",
       });
       return;
     }
-    
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('forum_replies')
-        .insert({
-          post_id: selectedPost.id,
-          profile_id: user.id,
-          content: newReply
-        });
-        
+        .insert([
+          {
+            content: newReply,
+            post_id: postId,
+            profile_id: (await supabase.auth.getUser()).data.user?.id,
+          },
+        ])
+        .select()
+        .single();
+
       if (error) throw error;
-      
-      setNewReply("");
-      
+
       toast({
         title: "Success",
-        description: "Reply added successfully"
+        description: "Reply created successfully",
       });
+
+      setNewReply("");
+      await fetchReplies(postId);
     } catch (error) {
-      console.error("Error adding reply:", error);
+      console.error('Error creating reply:', error);
       toast({
         title: "Error",
-        description: "Failed to add reply",
-        variant: "destructive"
+        description: "Failed to create reply",
+        variant: "destructive",
       });
     }
   };
-  
-  const handleAcceptAnswer = async (replyId: string) => {
-    if (!user || !selectedPost) return;
-    
+
+  const handlePostClick = async (post: ExtendedForumPost) => {
+    setSelectedPost(post);
+    await fetchReplies(post.id);
+
+    // Optimistically update the views
+    setPosts(prevPosts =>
+      prevPosts.map(p =>
+        p.id === post.id ? { ...p, views: p.views + 1 } : p
+      )
+    );
+
+    // Update views in the database
     try {
-      if (user.id !== selectedPost.author_id) {
+      const { error } = await supabase
+        .from('forum_posts')
+        .update({ views: post.views + 1 })
+        .eq('id', post.id);
+
+      if (error) {
+        console.error('Error updating views:', error);
         toast({
           title: "Error",
-          description: "Only the post author can mark an answer as accepted",
-          variant: "destructive"
+          description: "Failed to update views",
+          variant: "destructive",
         });
-        return;
+
+        // Revert the optimistic update if the database update fails
+        setPosts(prevPosts =>
+          prevPosts.map(p => (p.id === post.id ? { ...p, views: p.views } : p))
+        );
       }
-      
-      await supabase
-        .from('forum_replies')
-        .update({ is_accepted_answer: false })
-        .eq('post_id', selectedPost.id);
-      
-      const { error } = await supabase
-        .from('forum_replies')
-        .update({ is_accepted_answer: true })
-        .eq('id', replyId);
-        
-      if (error) throw error;
-      
-      await supabase
-        .from('forum_posts')
-        .update({ is_answered: true })
-        .eq('id', selectedPost.id);
-      
-      setSelectedPost({
-        ...selectedPost,
-        is_answered: true
-      });
-      
-      toast({
-        title: "Success",
-        description: "Answer marked as accepted"
-      });
     } catch (error) {
-      console.error("Error accepting answer:", error);
+      console.error('Error updating views:', error);
       toast({
         title: "Error",
-        description: "Failed to mark answer as accepted",
-        variant: "destructive"
+        description: "Failed to update views",
+        variant: "destructive",
       });
+
+      // Revert the optimistic update if an error occurs
+      setPosts(prevPosts =>
+        prevPosts.map(p => (p.id === post.id ? { ...p, views: p.views } : p))
+      );
     }
   };
 
-  const openDiscussion = (discussion: ForumPost) => {
-    setSelectedPost(discussion);
-    fetchReplies(discussion.id);
-    setSheetOpen(true);
-  };
-
-  const filteredDiscussions = discussions.filter(discussion => {
-    const matchesSearch = 
-      discussion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      discussion.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      discussion.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    let matchesTab = true;
-    if (activeTab === "popular") {
-      matchesTab = discussion.views > 10 || discussion.replies > 5;
-    } else if (activeTab === "unanswered") {
-      matchesTab = !discussion.is_answered;
-    } else if (activeTab === "my" && user) {
-      matchesTab = discussion.author_id === user.id;
+  const view = (num: number) => {
+    if (num < 1000) {
+      return num.toString();
+    } else if (num < 1000000) {
+      return (num / 1000).toFixed(1) + "K";
+    } else {
+      return (num / 1000000).toFixed(1) + "M";
     }
-    
-    return matchesSearch && matchesTab;
-  });
+  };
 
   return (
     <div className="container py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Discussion Forum</h1>
-          <p className="text-gray-500 mt-1">Connect with fellow students and share knowledge</p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <Input
-            placeholder="Search discussions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-64"
-            aria-label="Search discussions"
-          />
-          
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-education-primary hover:bg-education-primary/90">
-                <Plus className="h-4 w-4 mr-2" /> New Discussion
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>Create New Discussion</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    placeholder="Discussion title"
-                    value={newPost.title}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
-                    name="content"
-                    placeholder="Write your discussion post here..."
-                    rows={5}
-                    value={newPost.content}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="tags">Tags (comma-separated)</Label>
-                  <Input
-                    id="tags"
-                    name="tags"
-                    placeholder="e.g. Programming, Help, Project"
-                    value={newPost.tags}
-                    onChange={handleInputChange}
-                  />
-                </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Forum</h1>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Post
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create a New Post</DialogTitle>
+              <DialogDescription>
+                Share your thoughts or ask a question to the community.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">
+                  Title
+                </Label>
+                <Input
+                  id="title"
+                  value={newPost.title}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, title: e.target.value })
+                  }
+                  className="col-span-3"
+                />
               </div>
-              <DialogFooter>
-                <Button onClick={handleAddPost}>Post Discussion</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="tags" className="text-right">
+                  Tags
+                </Label>
+                <Input
+                  id="tags"
+                  value={newPost.tags}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, tags: e.target.value })
+                  }
+                  placeholder="react, javascript, help"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="content" className="text-right mt-2">
+                  Content
+                </Label>
+                <Textarea
+                  id="content"
+                  value={newPost.content}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, content: e.target.value })
+                  }
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <Button type="submit" onClick={createPost}>
+              Create Post
+            </Button>
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList>
-          <TabsTrigger value="all">All Discussions</TabsTrigger>
-          <TabsTrigger value="popular">Popular</TabsTrigger>
-          <TabsTrigger value="unanswered">Unanswered</TabsTrigger>
-          <TabsTrigger value="my">My Posts</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      <div className="space-y-4">
-        {loading ? (
-          <Card className="p-8 flex items-center justify-center">
-            <p>Loading discussions...</p>
-          </Card>
-        ) : filteredDiscussions.length > 0 ? (
-          filteredDiscussions.map(discussion => (
-            <Card 
-              key={discussion.id} 
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => openDiscussion(discussion)}
-              tabIndex={0}
-              role="button"
-              aria-label={`Discussion: ${discussion.title} by ${discussion.author}`}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  openDiscussion(discussion);
-                  e.preventDefault();
-                }
-              }}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex justify-between">
-                  <CardTitle className="text-lg font-semibold text-education-primary hover:text-education-primary/80 flex items-center gap-2">
-                    {discussion.is_answered && (
-                      <Check className="h-4 w-4 text-green-500" aria-label="Answered question" />
-                    )}
-                    {discussion.title}
-                  </CardTitle>
-                  <div className="text-sm text-gray-500">
-                    {discussion.date}
-                  </div>
-                </div>
+
+      {loading ? (
+        <p>Loading posts...</p>
+      ) : (
+        <div className="grid gap-4">
+          {posts.map((post) => (
+            <Card key={post.id} onClick={() => handlePostClick(post)} className="cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  {post.title}
+                  <Badge variant="secondary">{post.tags?.join(", ")}</Badge>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-3 mb-3">
+                <div className="flex items-center space-x-4">
                   <Avatar>
-                    <AvatarImage src={discussion.author_avatar || ""} alt={discussion.author} />
-                    <AvatarFallback className="bg-education-primary text-white">
-                      {discussion.author.split(" ").map((n) => n[0]).join("")}
-                    </AvatarFallback>
+                    {post.author_avatar ? (
+                      <AvatarImage src={post.author_avatar} alt={post.author} />
+                    ) : (
+                      <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+                    )}
                   </Avatar>
                   <div>
-                    <p className="font-medium">{discussion.author}</p>
-                    <p className="text-gray-500 text-sm">Student</p>
+                    <div className="font-medium">{post.author}</div>
+                    <div className="text-sm text-gray-500">{post.date}</div>
                   </div>
                 </div>
-                <p className="text-gray-700 mb-4 line-clamp-2">{discussion.content}</p>
-                <div className="flex flex-wrap gap-2">
-                  {discussion.tags.map((tag, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-medium"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                <p className="mt-2">{post.content.substring(0, 100)}...</p>
+                <div className="flex items-center mt-4 space-x-4">
+                  <div className="flex items-center space-x-2 text-gray-500">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>{post.replies}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-500">
+                    <Eye className="h-4 w-4" />
+                    <span>{view(post.views)}</span>
+                  </div>
                 </div>
               </CardContent>
-              <CardFooter className="border-t pt-4 flex justify-between">
-                <div className="flex gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    {discussion.replies} {discussion.replies === 1 ? "reply" : "replies"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    {discussion.views} {discussion.views === 1 ? "view" : "views"}
-                  </span>
-                </div>
-                <Button variant="ghost" size="sm">View Discussion</Button>
-              </CardFooter>
             </Card>
-          ))
-        ) : (
-          <Card className="flex items-center justify-center p-8">
-            <div className="text-center">
-              <p className="text-gray-500 mb-4">No discussions found matching your search.</p>
-              <Button 
-                variant="outline" 
-                onClick={() => setSearchTerm("")}
-              >
-                Clear Search
-              </Button>
-            </div>
-          </Card>
-        )}
-      </div>
-      
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-auto">
-          <SheetHeader className="pb-4">
-            <SheetTitle className="flex items-center gap-2">
-              {selectedPost?.is_answered && (
-                <Check className="h-4 w-4 text-green-500" aria-label="Answered question" />
-              )}
-              {selectedPost?.title}
-            </SheetTitle>
-            <SheetDescription>
-              Posted by {selectedPost?.author} on {selectedPost?.date}
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="mt-4 space-y-6">
-            <div className="border rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Avatar>
-                  <AvatarImage src={selectedPost?.author_avatar || ""} alt={selectedPost?.author} />
-                  <AvatarFallback className="bg-education-primary text-white">
-                    {selectedPost?.author.split(" ").map((n) => n[0]).join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{selectedPost?.author}</p>
-                  <p className="text-xs text-gray-500">Original poster</p>
-                </div>
-              </div>
-              
-              <div className="text-gray-700 whitespace-pre-wrap">
-                {selectedPost?.content}
-              </div>
-              
-              <div className="flex flex-wrap gap-1 pt-2">
-                {selectedPost?.tags.map((tag, index) => (
-                  <span 
-                    key={index} 
-                    className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-medium"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="font-medium">{replies.length} Replies</h3>
-              
-              {loadingReplies ? (
-                <p className="text-center p-4">Loading replies...</p>
-              ) : replies.length === 0 ? (
-                <p className="text-center border rounded-lg p-4 text-gray-500">
-                  No replies yet. Be the first to reply!
-                </p>
-              ) : (
-                replies.map((reply) => (
-                  <div 
-                    key={reply.id} 
-                    className={`border rounded-lg p-4 ${reply.is_accepted_answer ? 'border-green-500 bg-green-50' : ''}`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Avatar>
-                          <AvatarImage src={reply.author_avatar || ""} alt={reply.author} />
-                          <AvatarFallback className="bg-gray-300 text-gray-700">
-                            {reply.author.split(" ").map((n) => n[0]).join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{reply.author}</p>
-                          <p className="text-xs text-gray-500">{reply.date}</p>
-                        </div>
-                      </div>
-                      
-                      {user && user.id === selectedPost?.author_id && !reply.is_accepted_answer && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs text-green-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAcceptAnswer(reply.id);
-                          }}
-                        >
-                          Accept answer
-                        </Button>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={selectedPost !== null} onOpenChange={() => setSelectedPost(null)}>
+        <DialogContent className="sm:max-w-[80%]">
+          {selectedPost && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between">
+                  {selectedPost.title}
+                  <Badge variant="secondary">{selectedPost.tags?.join(", ")}</Badge>
+                </DialogTitle>
+                <DialogDescription>
+                  <div className="flex items-center space-x-4">
+                    <Avatar>
+                      {selectedPost.author_avatar ? (
+                        <AvatarImage src={selectedPost.author_avatar} alt={selectedPost.author} />
+                      ) : (
+                        <AvatarFallback>{selectedPost.author.charAt(0)}</AvatarFallback>
                       )}
-                      
-                      {reply.is_accepted_answer && (
-                        <span className="text-xs bg-green-100 text-green-800 py-1 px-2 rounded-full">
-                          Accepted Answer
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="text-gray-700 whitespace-pre-wrap">
-                      {reply.content}
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{selectedPost.author}</div>
+                      <div className="text-sm text-gray-500">{selectedPost.date}</div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-            
-            {user ? (
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Your Reply</h3>
+                  <p className="mt-2">{selectedPost.content}</p>
+                  <div className="flex items-center mt-4 space-x-4">
+                    <div className="flex items-center space-x-2 text-gray-500">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>{selectedPost.replies}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-500">
+                      <Eye className="h-4 w-4" />
+                      <span>{view(selectedPost.views)}</span>
+                    </div>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-4">
+                <h3 className="text-xl font-bold mb-2">Replies</h3>
+                {replies.map((reply) => (
+                  <Card key={reply.id} className="mb-4">
+                    <CardContent>
+                      <div className="flex items-center space-x-4 mb-2">
+                        <Avatar>
+                          {reply.author_avatar ? (
+                            <AvatarImage src={reply.author_avatar} alt={reply.author} />
+                          ) : (
+                            <AvatarFallback>{reply.author.charAt(0)}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{reply.author}</div>
+                          <div className="text-sm text-gray-500">{reply.date}</div>
+                        </div>
+                      </div>
+                      <p>{reply.content}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="mt-4">
                 <Textarea
                   placeholder="Write your reply here..."
-                  rows={4}
                   value={newReply}
                   onChange={(e) => setNewReply(e.target.value)}
-                  className="mb-4"
-                  ref={replyInputRef}
                 />
-                <div className="flex justify-end">
-                  <Button onClick={handleAddReply}>
-                    Post Reply
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="border rounded-lg p-4 text-center">
-                <p className="mb-2">You must be logged in to reply</p>
-                <Button variant="outline" onClick={() => window.location.href = "/auth"}>
-                  Sign In to Reply
+                <Button className="mt-2" onClick={() => createReply(selectedPost.id)}>
+                  Submit Reply
                 </Button>
               </div>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

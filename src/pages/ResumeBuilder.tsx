@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,46 +105,37 @@ const ResumeBuilder = () => {
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Calculate resume score based on completeness
   const calculateResumeScore = (data: ResumeData): number => {
     let score = 0;
     const maxScore = 100;
     
-    // Basic information (30 points)
     if (data.full_name) score += 5;
     if (data.email) score += 5;
     if (data.phone) score += 5;
     if (data.location) score += 5;
     if (data.summary && data.summary.length > 50) score += 10;
     
-    // Experience (20 points)
     const expPoints = Math.min(data.experience.length * 5, 20);
     score += expPoints;
     
-    // Education (15 points)
     const eduPoints = Math.min(data.education.length * 5, 15);
     score += eduPoints;
     
-    // Skills (15 points)
     const skillPoints = Math.min(data.skills.length, 15);
     score += skillPoints;
     
-    // Projects (10 points)
     const projectPoints = Math.min(data.projects.length * 2, 10);
     score += projectPoints;
     
-    // Certifications (5 points)
     const certPoints = Math.min(data.certifications.length, 5);
     score += certPoints;
     
-    // Languages (5 points)
     const langPoints = Math.min(data.languages.length, 5);
     score += langPoints;
     
     return Math.min(Math.round(score), maxScore);
   };
 
-  // Fetch resume data
   useEffect(() => {
     const fetchResumeData = async () => {
       if (!user) return;
@@ -178,7 +168,6 @@ const ResumeBuilder = () => {
             resume_score: data.resume_score || 0
           });
         } else {
-          // Create default resume with user data
           setResumeData({
             ...initialResumeData,
             full_name: user.user_metadata?.full_name || "",
@@ -200,7 +189,6 @@ const ResumeBuilder = () => {
     fetchResumeData();
   }, [user, toast]);
 
-  // Auto-save data when changes occur
   useEffect(() => {
     if (autoSaveTimeout) {
       clearTimeout(autoSaveTimeout);
@@ -209,7 +197,7 @@ const ResumeBuilder = () => {
     if (!loading && user) {
       const timeout = setTimeout(() => {
         saveResumeData();
-      }, 2000); // Auto-save after 2 seconds of inactivity
+      }, 2000);
       
       setAutoSaveTimeout(timeout);
     }
@@ -221,14 +209,12 @@ const ResumeBuilder = () => {
     };
   }, [resumeData, loading, user]);
 
-  // Save resume data
   const saveResumeData = async () => {
     if (!user) return;
     
     try {
       setSaving(true);
       
-      // Calculate resume score
       const score = calculateResumeScore(resumeData);
       
       const { error } = await supabase
@@ -465,7 +451,7 @@ const ResumeBuilder = () => {
         format: 'a4'
       });
       
-      const imgWidth = 210; // A4 width in mm
+      const imgWidth = 210;
       const imgHeight = canvas.height * imgWidth / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
