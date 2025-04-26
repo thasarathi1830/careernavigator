@@ -3,14 +3,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { SemesterCourse, Semester } from '@/types/SemesterCourses';
+import { Tables } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlusCircle, Trash2, Edit, Save } from 'lucide-react';
 
 const CourseTracker = () => {
@@ -39,19 +38,28 @@ const CourseTracker = () => {
         .from('semester_courses')
         .select('semester_name, sgpa, semester_id')
         .eq('profile_id', user.id)
-        .distinct('semester_id');
+        .then(result => {
+          if (result.error) throw result.error;
+          
+          const uniqueSemesters = Array.from(
+            new Set(result.data.map(item => item.semester_id))
+          ).map(semesterId => {
+            const semester = result.data.find(item => item.semester_id === semesterId);
+            return {
+              id: semesterId,
+              profile_id: user.id,
+              semester_name: semester?.semester_name || '',
+              sgpa: semester?.sgpa || 0,
+              created_at: new Date().toISOString()
+            };
+          });
+
+          return { data: uniqueSemesters, error: null };
+        });
 
       if (error) throw error;
 
-      const uniqueSemesters = data.map(item => ({
-        id: item.semester_id,
-        profile_id: user.id,
-        semester_name: item.semester_name,
-        sgpa: item.sgpa,
-        created_at: new Date().toISOString()
-      }));
-
-      setSemesters(uniqueSemesters);
+      setSemesters(data);
     } catch (error) {
       console.error('Error fetching semesters:', error);
       toast({
@@ -71,11 +79,27 @@ const CourseTracker = () => {
         .from('semester_courses')
         .select('*')
         .eq('profile_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { 
+          data: Tables<'semester_courses'>[] | null, 
+          error: any 
+        };
 
       if (error) throw error;
 
-      setSemesterCourses(data as SemesterCourse[]);
+      const typedCourses = (data || []).map(course => ({
+        id: course.id,
+        profile_id: course.profile_id,
+        course_name: course.course_name || '',
+        course_code: course.course_code || '',
+        credits: course.credits || 0,
+        grade: course.grade || '',
+        semester_id: course.semester_id || '',
+        semester_name: course.semester_name || '',
+        sgpa: course.sgpa || 0,
+        created_at: course.created_at
+      }));
+
+      setSemesterCourses(typedCourses);
     } catch (error) {
       console.error('Error fetching courses:', error);
       toast({
@@ -153,7 +177,6 @@ const CourseTracker = () => {
     try {
       setLoading(true);
       
-      // Get the semester name and SGPA for the selected semester
       const semester = semesters.find(s => s.id === selectedSemester);
       if (!semester) throw new Error('Selected semester not found');
       

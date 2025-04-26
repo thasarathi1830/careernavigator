@@ -227,6 +227,48 @@ export type Database = {
           },
         ]
       }
+      semester_courses: {
+        Row: {
+          course_code: string | null
+          course_name: string | null
+          created_at: string
+          credits: number | null
+          grade: string | null
+          id: string
+          profile_id: string
+          semester_id: string | null
+          semester_name: string
+          sgpa: number
+          updated_at: string
+        }
+        Insert: {
+          course_code?: string | null
+          course_name?: string | null
+          created_at?: string
+          credits?: number | null
+          grade?: string | null
+          id?: string
+          profile_id: string
+          semester_id?: string | null
+          semester_name: string
+          sgpa?: number
+          updated_at?: string
+        }
+        Update: {
+          course_code?: string | null
+          course_name?: string | null
+          created_at?: string
+          credits?: number | null
+          grade?: string | null
+          id?: string
+          profile_id?: string
+          semester_id?: string | null
+          semester_name?: string
+          sgpa?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       skills: {
         Row: {
           created_at: string
