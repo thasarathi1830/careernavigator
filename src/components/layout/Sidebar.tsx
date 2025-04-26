@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -9,7 +10,8 @@ import {
   FileText, 
   Calendar, 
   MessageSquare, 
-  Settings 
+  Settings,
+  FileEdit
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -42,6 +44,11 @@ const navItems: NavItem[] = [
     title: "Job Portal",
     href: "/job-portal",
     icon: <Briefcase className="h-5 w-5" />,
+  },
+  {
+    title: "Resume Builder",
+    href: "/resume-builder",
+    icon: <FileEdit className="h-5 w-5" />,
   },
   {
     title: "Projects",
@@ -85,6 +92,7 @@ export function Sidebar({ className }: SidebarProps) {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
             <svg

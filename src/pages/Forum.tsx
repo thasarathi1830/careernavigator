@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,93 +7,394 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Sheet,
+  SheetContent,
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle 
+} from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { MessageSquare, User, Eye, MessageSquareCheck, Plus } from "lucide-react";
+
+interface ForumPost {
+  id: string;
+  title: string;
+  author: string;
+  author_id: string;
+  author_avatar?: string;
+  content: string;
+  date: string;
+  replies: number;
+  views: number;
+  tags: string[];
+  is_answered: boolean;
+}
+
+interface ForumReply {
+  id: string;
+  post_id: string;
+  author: string;
+  author_id: string;
+  author_avatar?: string;
+  content: string;
+  date: string;
+  is_accepted_answer: boolean;
+}
 
 const Forum = () => {
   const { user } = useAuth();
-  const [discussions, setDiscussions] = useState([
-    {
-      id: 1,
-      title: "Tips for Data Structures Midterm",
-      author: "Alice Johnson",
-      authorInitials: "AJ",
-      content: "I'm preparing for the Data Structures midterm next week. Any tips on what to focus on? I'm particularly struggling with AVL trees and red-black trees.",
-      date: "2025-04-20",
-      replies: 5,
-      views: 42,
-      tags: ["Data Structures", "Exam Prep", "Algorithms"]
-    },
-    {
-      id: 2,
-      title: "Web Development Project Group",
-      author: "Bob Smith",
-      authorInitials: "BS",
-      content: "Looking for 2-3 people to join my Web Development final project group. We're planning to build a full-stack application using React and Node.js.",
-      date: "2025-04-18",
-      replies: 8,
-      views: 76,
-      tags: ["Web Development", "Project", "Group Work"]
-    },
-    {
-      id: 3,
-      title: "Machine Learning Resource Recommendations",
-      author: "Carol Davis",
-      authorInitials: "CD",
-      content: "Can anyone recommend good resources for getting started with machine learning? I'm looking for tutorials, courses, or books that are beginner-friendly.",
-      date: "2025-04-15",
-      replies: 12,
-      views: 103,
-      tags: ["Machine Learning", "Resources", "AI"]
-    }
-  ]);
-
+  const { toast } = useToast();
+  const [discussions, setDiscussions] = useState<ForumPost[]>([]);
+  const [replies, setReplies] = useState<ForumReply[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  
   const [newPost, setNewPost] = useState({
     title: "",
     content: "",
     tags: ""
   });
 
+  const [newReply, setNewReply] = useState("");
+  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch forum posts
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        // Fetch posts with author info
+        const { data: postsData, error: postsError } = await supabase
+          .from('forum_posts')
+          .select(`
+            *,
+            profiles:profile_id (
+              full_name,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false });
+          
+        if (postsError) throw postsError;
+        
+        // Fetch reply counts
+        const { data: replyCounts, error: replyCountError } = await supabase
+          .from('forum_replies')
+          .select('post_id, count', { count: 'exact' })
+          .group('post_id');
+          
+        if (replyCountError) throw replyCountError;
+        
+        // Process posts data
+        const processedPosts: ForumPost[] = postsData.map(post => {
+          const replyCount = replyCounts.find(r => r.post_id === post.id)?.count || 0;
+          
+          return {
+            id: post.id,
+            title: post.title,
+            author: post.profiles?.full_name || 'Anonymous',
+            author_id: post.profile_id,
+            author_avatar: post.profiles?.avatar_url,
+            content: post.content,
+            date: new Date(post.created_at).toISOString().split('T')[0],
+            replies: replyCount,
+            views: post.views || 0,
+            tags: post.tags || [],
+            is_answered: post.is_answered
+          };
+        });
+        
+        setDiscussions(processedPosts);
+      } catch (error) {
+        console.error("Error fetching forum posts:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load discussions",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPosts();
+    
+    // Set up real-time subscription for posts
+    const postsChannel = supabase
+      .channel('public:forum_posts')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'forum_posts' }, 
+        () => {
+          fetchPosts(); // Refetch posts on any changes
+        }
+      )
+      .subscribe();
+      
+    // Set up real-time subscription for replies
+    const repliesChannel = supabase
+      .channel('public:forum_replies')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'forum_replies' }, 
+        () => {
+          if (selectedPost) {
+            fetchReplies(selectedPost.id); // Refetch replies for current post
+          }
+          fetchPosts(); // Also update the posts to get updated reply counts
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(repliesChannel);
+    };
+  }, [toast, selectedPost]);
+
+  const fetchReplies = async (postId: string) => {
+    if (!postId) return;
+    
+    try {
+      setLoadingReplies(true);
+      
+      // Increment view count
+      await supabase
+        .from('forum_posts')
+        .update({ views: discussions.find(d => d.id === postId)?.views + 1 || 1 })
+        .eq('id', postId);
+      
+      // Fetch replies with author info
+      const { data, error } = await supabase
+        .from('forum_replies')
+        .select(`
+          *,
+          profiles:profile_id (
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+        
+      if (error) throw error;
+      
+      // Process replies data
+      const processedReplies: ForumReply[] = data.map(reply => ({
+        id: reply.id,
+        post_id: reply.post_id,
+        author: reply.profiles?.full_name || 'Anonymous',
+        author_id: reply.profile_id,
+        author_avatar: reply.profiles?.avatar_url,
+        content: reply.content,
+        date: new Date(reply.created_at).toISOString().split('T')[0],
+        is_accepted_answer: reply.is_accepted_answer
+      }));
+      
+      setReplies(processedReplies);
+    } catch (error) {
+      console.error("Error fetching replies:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load discussion replies",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingReplies(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewPost({ ...newPost, [name]: value });
   };
 
-  const handleAddPost = () => {
-    const id = discussions.length > 0 ? Math.max(...discussions.map(d => d.id)) + 1 : 1;
-    const tags = newPost.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+  const handleAddPost = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a post",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    setDiscussions([
-      {
-        id,
-        title: newPost.title,
-        author: user?.user_metadata?.full_name || user?.email || "Anonymous User",
-        authorInitials: (user?.user_metadata?.full_name || "AU").split(" ").map((n) => n[0]).join(""),
-        content: newPost.content,
-        date: new Date().toISOString().split('T')[0],
-        replies: 0,
-        views: 0,
-        tags
-      },
-      ...discussions
-    ]);
+    try {
+      const tags = newPost.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      
+      const { error } = await supabase
+        .from('forum_posts')
+        .insert({
+          profile_id: user.id,
+          title: newPost.title,
+          content: newPost.content,
+          tags: tags,
+          views: 0
+        });
+        
+      if (error) throw error;
+      
+      setNewPost({
+        title: "",
+        content: "",
+        tags: ""
+      });
+      
+      setDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Discussion post created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create discussion post",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleAddReply = async () => {
+    if (!user || !selectedPost) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to reply",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    setNewPost({
-      title: "",
-      content: "",
-      tags: ""
-    });
+    if (!newReply.trim()) {
+      toast({
+        title: "Error",
+        description: "Reply content cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    setDialogOpen(false);
+    try {
+      const { error } = await supabase
+        .from('forum_replies')
+        .insert({
+          post_id: selectedPost.id,
+          profile_id: user.id,
+          content: newReply
+        });
+        
+      if (error) throw error;
+      
+      setNewReply("");
+      
+      toast({
+        title: "Success",
+        description: "Reply added successfully"
+      });
+    } catch (error) {
+      console.error("Error adding reply:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add reply",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleAcceptAnswer = async (replyId: string) => {
+    if (!user || !selectedPost) return;
+    
+    try {
+      // Check if user is the post author
+      if (user.id !== selectedPost.author_id) {
+        toast({
+          title: "Error",
+          description: "Only the post author can mark an answer as accepted",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // First clear any existing accepted answers
+      await supabase
+        .from('forum_replies')
+        .update({ is_accepted_answer: false })
+        .eq('post_id', selectedPost.id);
+      
+      // Mark the selected reply as accepted
+      const { error } = await supabase
+        .from('forum_replies')
+        .update({ is_accepted_answer: true })
+        .eq('id', replyId);
+        
+      if (error) throw error;
+      
+      // Mark the post as answered
+      await supabase
+        .from('forum_posts')
+        .update({ is_answered: true })
+        .eq('id', selectedPost.id);
+      
+      // Update local state for selected post
+      setSelectedPost({
+        ...selectedPost,
+        is_answered: true
+      });
+      
+      toast({
+        title: "Success",
+        description: "Answer marked as accepted"
+      });
+    } catch (error) {
+      console.error("Error accepting answer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark answer as accepted",
+        variant: "destructive"
+      });
+    }
   };
 
+  const openDiscussion = (discussion: ForumPost) => {
+    setSelectedPost(discussion);
+    fetchReplies(discussion.id);
+    setSheetOpen(true);
+  };
+
+  // Filter discussions based on search term and active tab
   const filteredDiscussions = discussions.filter(discussion => {
-    return discussion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           discussion.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           discussion.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Search filter
+    const matchesSearch = 
+      discussion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      discussion.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      discussion.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Tab filter
+    let matchesTab = true;
+    if (activeTab === "popular") {
+      matchesTab = discussion.views > 10 || discussion.replies > 5;
+    } else if (activeTab === "unanswered") {
+      matchesTab = !discussion.is_answered;
+    } else if (activeTab === "my" && user) {
+      matchesTab = discussion.author_id === user.id;
+    }
+    
+    return matchesSearch && matchesTab;
   });
 
   return (
@@ -109,12 +411,13 @@ const Forum = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full md:w-64"
+            aria-label="Search discussions"
           />
           
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-education-primary hover:bg-education-primary/90">
-                New Discussion
+                <Plus className="h-4 w-4 mr-2" /> New Discussion
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px]">
@@ -164,7 +467,7 @@ const Forum = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="all" className="mb-6">
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList>
           <TabsTrigger value="all">All Discussions</TabsTrigger>
           <TabsTrigger value="popular">Popular</TabsTrigger>
@@ -174,12 +477,32 @@ const Forum = () => {
       </Tabs>
       
       <div className="space-y-4">
-        {filteredDiscussions.length > 0 ? (
+        {loading ? (
+          <Card className="p-8 flex items-center justify-center">
+            <p>Loading discussions...</p>
+          </Card>
+        ) : filteredDiscussions.length > 0 ? (
           filteredDiscussions.map(discussion => (
-            <Card key={discussion.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={discussion.id} 
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => openDiscussion(discussion)}
+              tabIndex={0}
+              role="button"
+              aria-label={`Discussion: ${discussion.title} by ${discussion.author}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openDiscussion(discussion);
+                  e.preventDefault();
+                }
+              }}
+            >
               <CardHeader className="pb-2">
                 <div className="flex justify-between">
-                  <CardTitle className="text-lg font-semibold text-education-primary hover:text-education-primary/80 cursor-pointer">
+                  <CardTitle className="text-lg font-semibold text-education-primary hover:text-education-primary/80 flex items-center gap-2">
+                    {discussion.is_answered && (
+                      <MessageSquareCheck className="h-4 w-4 text-green-500" aria-label="Answered question" />
+                    )}
                     {discussion.title}
                   </CardTitle>
                   <div className="text-sm text-gray-500">
@@ -190,9 +513,9 @@ const Forum = () => {
               <CardContent>
                 <div className="flex gap-3 mb-3">
                   <Avatar>
-                    <AvatarImage src="" />
+                    <AvatarImage src={discussion.author_avatar || ""} alt={discussion.author} />
                     <AvatarFallback className="bg-education-primary text-white">
-                      {discussion.authorInitials}
+                      {discussion.author.split(" ").map((n) => n[0]).join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -214,8 +537,14 @@ const Forum = () => {
               </CardContent>
               <CardFooter className="border-t pt-4 flex justify-between">
                 <div className="flex gap-4 text-sm text-gray-500">
-                  <span>{discussion.replies} replies</span>
-                  <span>{discussion.views} views</span>
+                  <span className="flex items-center gap-1">
+                    <MessageSquare className="h-4 w-4" />
+                    {discussion.replies} {discussion.replies === 1 ? "reply" : "replies"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="h-4 w-4" />
+                    {discussion.views} {discussion.views === 1 ? "view" : "views"}
+                  </span>
                 </div>
                 <Button variant="ghost" size="sm">View Discussion</Button>
               </CardFooter>
@@ -235,6 +564,142 @@ const Forum = () => {
           </Card>
         )}
       </div>
+      
+      {/* Discussion Detail Side Panel */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-auto">
+          <SheetHeader className="pb-4">
+            <SheetTitle className="flex items-center gap-2">
+              {selectedPost?.is_answered && (
+                <MessageSquareCheck className="h-4 w-4 text-green-500" aria-label="Answered question" />
+              )}
+              {selectedPost?.title}
+            </SheetTitle>
+            <SheetDescription>
+              Posted by {selectedPost?.author} on {selectedPost?.date}
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-4 space-y-6">
+            {/* Original post */}
+            <div className="border rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Avatar>
+                  <AvatarImage src={selectedPost?.author_avatar || ""} alt={selectedPost?.author} />
+                  <AvatarFallback className="bg-education-primary text-white">
+                    {selectedPost?.author.split(" ").map((n) => n[0]).join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedPost?.author}</p>
+                  <p className="text-xs text-gray-500">Original poster</p>
+                </div>
+              </div>
+              
+              <div className="text-gray-700 whitespace-pre-wrap">
+                {selectedPost?.content}
+              </div>
+              
+              <div className="flex flex-wrap gap-1 pt-2">
+                {selectedPost?.tags.map((tag, index) => (
+                  <span 
+                    key={index} 
+                    className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-medium"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            {/* Replies */}
+            <div className="space-y-4">
+              <h3 className="font-medium">{replies.length} Replies</h3>
+              
+              {loadingReplies ? (
+                <p className="text-center p-4">Loading replies...</p>
+              ) : replies.length === 0 ? (
+                <p className="text-center border rounded-lg p-4 text-gray-500">
+                  No replies yet. Be the first to reply!
+                </p>
+              ) : (
+                replies.map((reply) => (
+                  <div 
+                    key={reply.id} 
+                    className={`border rounded-lg p-4 ${reply.is_accepted_answer ? 'border-green-500 bg-green-50' : ''}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Avatar>
+                          <AvatarImage src={reply.author_avatar || ""} alt={reply.author} />
+                          <AvatarFallback className="bg-gray-300 text-gray-700">
+                            {reply.author.split(" ").map((n) => n[0]).join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{reply.author}</p>
+                          <p className="text-xs text-gray-500">{reply.date}</p>
+                        </div>
+                      </div>
+                      
+                      {user && user.id === selectedPost?.author_id && !reply.is_accepted_answer && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs text-green-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAcceptAnswer(reply.id);
+                          }}
+                        >
+                          Accept answer
+                        </Button>
+                      )}
+                      
+                      {reply.is_accepted_answer && (
+                        <span className="text-xs bg-green-100 text-green-800 py-1 px-2 rounded-full">
+                          Accepted Answer
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="text-gray-700 whitespace-pre-wrap">
+                      {reply.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Reply form */}
+            {user ? (
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-2">Your Reply</h3>
+                <Textarea
+                  placeholder="Write your reply here..."
+                  rows={4}
+                  value={newReply}
+                  onChange={(e) => setNewReply(e.target.value)}
+                  className="mb-4"
+                  ref={replyInputRef}
+                />
+                <div className="flex justify-end">
+                  <Button onClick={handleAddReply}>
+                    Post Reply
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border rounded-lg p-4 text-center">
+                <p className="mb-2">You must be logged in to reply</p>
+                <Button variant="outline" onClick={() => window.location.href = "/auth"}>
+                  Sign In to Reply
+                </Button>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

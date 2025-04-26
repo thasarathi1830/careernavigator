@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +26,13 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useThemeContext } from "@/contexts/ThemeContext";
 
 const SettingsPage = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
+  const { preferences, updatePreferences, isLoading: themeLoading } = useThemeContext();
 
   // Account settings schema
   const accountFormSchema = z.object({
@@ -130,33 +133,6 @@ const SettingsPage = () => {
     }, 1000);
   };
 
-  // Appearance settings
-  const [appearance, setAppearance] = useState({
-    theme: "light",
-    fontSize: "medium",
-    colorBlindMode: false,
-    reducedMotion: false,
-  });
-
-  const handleAppearanceChange = (key, value) => {
-    setAppearance({
-      ...appearance,
-      [key]: value,
-    });
-  };
-
-  const handleSaveAppearance = () => {
-    setSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSaving(false);
-      toast({
-        title: "Appearance settings updated",
-        description: "Your appearance settings have been saved.",
-      });
-    }, 1000);
-  };
-
   // Security settings
   const securityFormSchema = z.object({
     currentPassword: z.string().min(1, {
@@ -228,6 +204,27 @@ const SettingsPage = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Handle appearance settings
+  const handleAppearanceChange = async (key, value) => {
+    if (themeLoading) return;
+    
+    try {
+      const updatedPreferences = {
+        ...preferences,
+        [key]: value
+      };
+      
+      await updatePreferences(updatedPreferences);
+    } catch (error) {
+      console.error("Error updating appearance:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save appearance settings",
+        variant: "destructive",
+      });
     }
   };
 
@@ -431,23 +428,26 @@ const SettingsPage = () => {
                 <Label htmlFor="theme">Theme</Label>
                 <div className="grid grid-cols-3 gap-4 mt-2">
                   <Button 
-                    variant={appearance.theme === "light" ? "default" : "outline"} 
+                    variant={preferences?.theme === "light" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("theme", "light")}
                     className="h-20"
+                    disabled={themeLoading}
                   >
                     Light
                   </Button>
                   <Button 
-                    variant={appearance.theme === "dark" ? "default" : "outline"} 
+                    variant={preferences?.theme === "dark" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("theme", "dark")}
                     className="h-20"
+                    disabled={themeLoading}
                   >
                     Dark
                   </Button>
                   <Button 
-                    variant={appearance.theme === "system" ? "default" : "outline"} 
+                    variant={preferences?.theme === "system" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("theme", "system")}
                     className="h-20"
+                    disabled={themeLoading}
                   >
                     System
                   </Button>
@@ -458,26 +458,30 @@ const SettingsPage = () => {
                 <Label htmlFor="fontSize">Font Size</Label>
                 <div className="grid grid-cols-4 gap-4 mt-2">
                   <Button 
-                    variant={appearance.fontSize === "small" ? "default" : "outline"} 
+                    variant={preferences?.fontSize === "small" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("fontSize", "small")}
+                    disabled={themeLoading}
                   >
                     Small
                   </Button>
                   <Button 
-                    variant={appearance.fontSize === "medium" ? "default" : "outline"} 
+                    variant={preferences?.fontSize === "medium" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("fontSize", "medium")}
+                    disabled={themeLoading}
                   >
                     Medium
                   </Button>
                   <Button 
-                    variant={appearance.fontSize === "large" ? "default" : "outline"} 
+                    variant={preferences?.fontSize === "large" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("fontSize", "large")}
+                    disabled={themeLoading}
                   >
                     Large
                   </Button>
                   <Button 
-                    variant={appearance.fontSize === "x-large" ? "default" : "outline"} 
+                    variant={preferences?.fontSize === "x-large" ? "default" : "outline"} 
                     onClick={() => handleAppearanceChange("fontSize", "x-large")}
+                    disabled={themeLoading}
                   >
                     X-Large
                   </Button>
@@ -495,8 +499,9 @@ const SettingsPage = () => {
                       </p>
                     </div>
                     <Switch 
-                      checked={appearance.colorBlindMode}
+                      checked={preferences?.colorBlindMode || false}
                       onCheckedChange={(checked) => handleAppearanceChange("colorBlindMode", checked)}
+                      disabled={themeLoading}
                     />
                   </div>
                   
@@ -508,16 +513,13 @@ const SettingsPage = () => {
                       </p>
                     </div>
                     <Switch 
-                      checked={appearance.reducedMotion}
+                      checked={preferences?.reducedMotion || false}
                       onCheckedChange={(checked) => handleAppearanceChange("reducedMotion", checked)}
+                      disabled={themeLoading}
                     />
                   </div>
                 </div>
               </div>
-              
-              <Button onClick={handleSaveAppearance} disabled={saving}>
-                {saving ? "Saving..." : "Save Appearance Settings"}
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
