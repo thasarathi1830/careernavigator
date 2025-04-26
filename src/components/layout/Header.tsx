@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,37 +5,42 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useState } from "react";
-
 export default function Header() {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);
-
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      
+
       // Use signOut() method with proper error handling
-      const { error } = await supabase.auth.signOut();
-      
+      const {
+        error
+      } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
         toast({
           title: "Error",
           description: "Failed to sign out. Please try again.",
-          variant: "destructive",
+          variant: "destructive"
         });
       } else {
         console.log("Successfully signed out");
         toast({
           title: "Success",
-          description: "You have been signed out successfully.",
+          description: "You have been signed out successfully."
         });
-        
+
         // Force navigation to auth page after successful sign out
         setTimeout(() => {
-          navigate("/auth", { replace: true });
+          navigate("/auth", {
+            replace: true
+          });
         }, 100);
       }
     } catch (error) {
@@ -44,22 +48,16 @@ export default function Header() {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSigningOut(false);
     }
   };
-
-  return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  return <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/9ad5f683-0a69-459f-83c1-46d1dfbb2c6e.png" 
-            alt="CareerNavigator Logo" 
-            className="w-8 h-8"
-          />
+          <img alt="CareerNavigator Logo" className="w-8 h-8 object-fill" src="/lovable-uploads/a4fdd853-ce6e-4faa-8029-8374f7f9ff0f.png" />
           <p className="font-bold">
             CareerNavigator
           </p>
@@ -67,21 +65,12 @@ export default function Header() {
 
         <div className="flex items-center gap-4 ml-auto">
           <ThemeToggle />
-          {user ? (
-            <Button 
-              variant="ghost" 
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-            >
+          {user ? <Button variant="ghost" onClick={handleSignOut} disabled={isSigningOut}>
               {isSigningOut ? "Signing Out..." : "Sign Out"}
-            </Button>
-          ) : (
-            <Button onClick={() => navigate("/auth")}>
+            </Button> : <Button onClick={() => navigate("/auth")}>
               Sign In
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
-    </header>
-  );
+    </header>;
 }
