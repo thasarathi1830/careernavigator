@@ -1,10 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useState } from "react";
 import { 
   DropdownMenu, 
@@ -15,6 +13,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default function Header() {
   const { user } = useAuth();

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
-import Layout from "@/components/Layout";
+import Layout from "@/components/layout/Layout"; // Fixed import path
 import Index from "@/pages/Index";
 import CourseTracker from "@/pages/CourseTracker";
 import ResumeBuilder from "@/pages/ResumeBuilder";
