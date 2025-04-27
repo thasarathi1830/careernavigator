@@ -9,6 +9,7 @@ import CourseTracker from "@/pages/CourseTracker";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import JobPortal from "@/pages/JobPortal";
 import Exams from "@/pages/Exams";
+import Settings from "@/pages/Settings";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
               <Route path="/resume-builder" element={<ResumeBuilder />} />
               <Route path="/job-portal" element={<JobPortal />} />
               <Route path="/exams" element={<Exams />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Routes>
         </Router>

@@ -1,12 +1,10 @@
+
 import { useState } from "react";
 import Sidebar from "./Sidebar";
-import Header from "./Header";  // Change from { Header } to just Header
+import Header from "./Header";
+import { Outlet } from "react-router-dom";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
@@ -15,7 +13,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto bg-gray-50">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

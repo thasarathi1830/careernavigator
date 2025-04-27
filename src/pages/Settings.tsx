@@ -206,27 +206,6 @@ const SettingsPage = () => {
     }
   };
 
-  // Handle appearance settings
-  const handleAppearanceChange = async (key, value) => {
-    if (themeLoading) return;
-    
-    try {
-      const updatedPreferences = {
-        ...preferences,
-        [key]: value
-      };
-      
-      await updatePreferences(updatedPreferences);
-    } catch (error) {
-      console.error("Error updating appearance:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save appearance settings",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
@@ -235,7 +214,6 @@ const SettingsPage = () => {
         <TabsList>
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
         
@@ -413,112 +391,6 @@ const SettingsPage = () => {
               <Button onClick={handleSaveNotifications} disabled={saving}>
                 {saving ? "Saving..." : "Save Preferences"}
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="appearance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="theme">Theme</Label>
-                <div className="grid grid-cols-3 gap-4 mt-2">
-                  <Button 
-                    variant={preferences?.theme === "light" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("theme", "light")}
-                    className="h-20"
-                    disabled={themeLoading}
-                  >
-                    Light
-                  </Button>
-                  <Button 
-                    variant={preferences?.theme === "dark" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("theme", "dark")}
-                    className="h-20"
-                    disabled={themeLoading}
-                  >
-                    Dark
-                  </Button>
-                  <Button 
-                    variant={preferences?.theme === "system" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("theme", "system")}
-                    className="h-20"
-                    disabled={themeLoading}
-                  >
-                    System
-                  </Button>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="fontSize">Font Size</Label>
-                <div className="grid grid-cols-4 gap-4 mt-2">
-                  <Button 
-                    variant={preferences?.fontSize === "small" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("fontSize", "small")}
-                    disabled={themeLoading}
-                  >
-                    Small
-                  </Button>
-                  <Button 
-                    variant={preferences?.fontSize === "medium" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("fontSize", "medium")}
-                    disabled={themeLoading}
-                  >
-                    Medium
-                  </Button>
-                  <Button 
-                    variant={preferences?.fontSize === "large" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("fontSize", "large")}
-                    disabled={themeLoading}
-                  >
-                    Large
-                  </Button>
-                  <Button 
-                    variant={preferences?.fontSize === "x-large" ? "default" : "outline"} 
-                    onClick={() => handleAppearanceChange("fontSize", "x-large")}
-                    disabled={themeLoading}
-                  >
-                    X-Large
-                  </Button>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">Accessibility</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Color Blind Mode</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Use colors that are accessible for color blind users.
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={preferences?.colorBlindMode || false}
-                      onCheckedChange={(checked) => handleAppearanceChange("colorBlindMode", checked)}
-                      disabled={themeLoading}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Reduced Motion</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Minimize animations throughout the interface.
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={preferences?.reducedMotion || false}
-                      onCheckedChange={(checked) => handleAppearanceChange("reducedMotion", checked)}
-                      disabled={themeLoading}
-                    />
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

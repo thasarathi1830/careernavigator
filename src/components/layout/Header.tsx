@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,6 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default function Header() {
   const { user } = useAuth();
@@ -75,7 +75,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4 ml-auto">
-          <ThemeToggle />
+          {/* ThemeToggle component removed as requested */}
           
           {user ? (
             <DropdownMenu>
