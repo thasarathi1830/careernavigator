@@ -26,6 +26,7 @@ export const useResumeData = () => {
   const { toast } = useToast();
   const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -74,9 +75,13 @@ export const useResumeData = () => {
 
   useEffect(() => {
     const fetchResumeData = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       
       try {
+        setError(null);
         const { data, error } = await supabase
           .from("resume_details")
           .select("*")
@@ -86,6 +91,7 @@ export const useResumeData = () => {
         if (error) throw error;
         
         if (data) {
+          console.log("Resume data fetched:", data);
           const typedData: ResumeData = {
             ...initialResumeData,
             id: data.id,
@@ -108,14 +114,16 @@ export const useResumeData = () => {
           
           setResumeData(typedData);
         } else {
+          console.log("No resume data found, initializing with user info");
           setResumeData({
             ...initialResumeData,
             full_name: user.user_metadata?.full_name || "",
             email: user.email || ""
           });
         }
-      } catch (error) {
-        console.error("Error fetching resume data:", error);
+      } catch (err) {
+        console.error("Error fetching resume data:", err);
+        setError("Failed to load resume data. Please try again later.");
         toast({
           title: "Error",
           description: "Failed to load resume data",
@@ -134,7 +142,7 @@ export const useResumeData = () => {
       clearTimeout(autoSaveTimeout);
     }
     
-    if (!loading && user) {
+    if (!loading && user && !error) {
       const timeout = setTimeout(() => {
         saveResumeData();
       }, 2000);
@@ -147,19 +155,20 @@ export const useResumeData = () => {
         clearTimeout(autoSaveTimeout);
       }
     };
-  }, [resumeData, loading, user]);
+  }, [resumeData, loading, user, error]);
 
   const saveResumeData = async () => {
     if (!user) return;
     
     try {
       setSaving(true);
+      setError(null);
       
       const score = calculateResumeScore(resumeData);
       
       // Convert the typed arrays to Json[] for Supabase
       const dataToSave: ResumeDataSupabase = {
-        id: resumeData.id, // Include id if it exists
+        id: resumeData.id, 
         profile_id: user.id,
         full_name: resumeData.full_name,
         email: resumeData.email,
@@ -173,7 +182,7 @@ export const useResumeData = () => {
         certifications: resumeData.certifications as unknown as Json[],
         languages: resumeData.languages as unknown as Json[],
         resume_score: score,
-        created_at: resumeData.created_at, // Include created_at if it exists
+        created_at: resumeData.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
       
@@ -191,8 +200,9 @@ export const useResumeData = () => {
         resume_score: score
       }));
       
-    } catch (error) {
-      console.error("Error saving resume data:", error);
+    } catch (err) {
+      console.error("Error saving resume data:", err);
+      setError("Failed to save resume data. Please try again later.");
       toast({
         title: "Error",
         description: "Failed to save resume data",
@@ -209,6 +219,7 @@ export const useResumeData = () => {
     loading,
     saving,
     lastSaved,
-    saveResumeData
+    saveResumeData,
+    error
   };
 };

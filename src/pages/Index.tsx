@@ -1,13 +1,84 @@
 
+import { useState, useEffect } from "react";
 import { BookOpen, Briefcase, Calendar, FileText } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
-import { ThemeToggleCard } from "@/components/dashboard/ThemeToggleCard";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [cgpa, setCgpa] = useState<number>(0);
+  const [completedCourses, setCompletedCourses] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  
+  // Fetch semester data for CGPA calculation
+  useEffect(() => {
+    const fetchSemestersData = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        const { data: semesterData, error } = await supabase
+          .from('semester_courses')
+          .select('semester_id, semester_name, sgpa')
+          .eq('profile_id', user.id);
+        
+        if (error) throw error;
+        
+        // Get unique semesters
+        const uniqueSemesters = Array.from(
+          new Set(semesterData.map(item => item.semester_id))
+        ).map(semesterId => {
+          const semester = semesterData.find(item => item.semester_id === semesterId);
+          return {
+            id: semesterId,
+            profile_id: user.id,
+            semester_name: semester?.semester_name || '',
+            sgpa: semester?.sgpa || 0,
+            created_at: new Date().toISOString()
+          };
+        }).filter(semester => semester.sgpa > 0);
+        
+        // Calculate CGPA
+        if (uniqueSemesters.length > 0) {
+          const totalGpa = uniqueSemesters.reduce((sum, sem) => sum + sem.sgpa, 0);
+          const calculatedCgpa = totalGpa / uniqueSemesters.length;
+          setCgpa(parseFloat(calculatedCgpa.toFixed(2)));
+        }
+        
+        // Count completed courses
+        const { count, error: countError } = await supabase
+          .from('semester_courses')
+          .select('*', { count: 'exact' })
+          .eq('profile_id', user.id)
+          .not('grade', 'eq', 'IP');
+          
+        if (countError) throw countError;
+        
+        if (count !== null) {
+          setCompletedCourses(count);
+        }
+      } catch (error) {
+        console.error('Error fetching academic data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load academic data',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSemestersData();
+  }, [user, toast]);
   
   // Mock data
   const upcomingDeadlines = [
@@ -51,26 +122,6 @@ const Index = () => {
     },
   ];
 
-  // Calculate initial CGPA from the mock data
-  const initialSemesterGPAs = [
-    { semester: "1st (Odd) Semester", sgpa: 8.4 },
-    { semester: "2nd (Even) Semester", sgpa: 8.5 },
-    { semester: "3rd (Odd) Semester", sgpa: 8.7 },
-    { semester: "4th (Even) Semester", sgpa: 8.75 },
-    { semester: "5th (Odd) Semester", sgpa: 8.8 },
-    { semester: "6th (Even) Semester", sgpa: 8.6 },
-    { semester: "7th (Odd) Semester", sgpa: 8.9 },
-    { semester: "8th (Even) Semester", sgpa: 8.85 }
-  ];
-
-  const calculateCGPA = (semesters: typeof initialSemesterGPAs) => {
-    if (semesters.length === 0) return 0;
-    const totalGPA = semesters.reduce((sum, sem) => sum + sem.sgpa, 0);
-    return totalGPA / semesters.length;
-  };
-
-  const cgpa = calculateCGPA(initialSemesterGPAs);
-
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
@@ -78,13 +129,12 @@ const Index = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" role="region" aria-label="Key statistics">
         <StatCard
           title="Current CGPA"
-          value={cgpa}
-          trend={{ value: 5, positive: true }}
+          value={loading ? "Loading..." : cgpa}
           icon={<BookOpen className="h-6 w-6" aria-hidden="true" />}
         />
         <StatCard
           title="Completed Courses"
-          value="18"
+          value={loading ? "Loading..." : completedCourses.toString()}
           icon={<Calendar className="h-6 w-6" aria-hidden="true" />}
         />
         <StatCard
@@ -157,8 +207,6 @@ const Index = () => {
         </DashboardCard>
         
         <div className="space-y-6">
-          <ThemeToggleCard />
-          
           <DashboardCard 
             title="Recent Job Opportunities" 
             aria-label="List of recent job opportunities"

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PlusCircle, Trash2, Edit, Save } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CGPAPerformanceGraph } from '@/components/CGPA/CGPAPerformanceGraph';
 
 const CourseTracker = () => {
   const { user } = useAuth();
@@ -291,6 +293,11 @@ const CourseTracker = () => {
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">Course Tracker</h1>
+      
+      {/* CGPA Performance Graph */}
+      <div className="mb-8">
+        <CGPAPerformanceGraph semesters={semesters} />
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <Card className="col-span-1">

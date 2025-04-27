@@ -1,10 +1,9 @@
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,15 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, MapPin, Calendar, Building, Search, Filter, Download } from "lucide-react";
+import { Briefcase, MapPin, Calendar, Building, Search, Filter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 
 const JobPortal = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const resumeRef = useRef(null);
-  const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
   
   const jobs = [
@@ -130,68 +125,14 @@ const JobPortal = () => {
     job.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleDownloadResume = async () => {
-    if (!resumeRef.current) return;
-    
-    setIsDownloading(true);
-    toast({
-      title: "Preparing Resume",
-      description: "Your resume is being generated...",
-    });
-
-    try {
-      const resumeElement = resumeRef.current;
-      const canvas = await html2canvas(resumeElement, {
-        scale: 2,
-        logging: false,
-        useCORS: true,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = canvas.height * imgWidth / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save("Student_Resume.pdf");
-      
-      toast({
-        title: "Resume Downloaded",
-        description: "Your resume has been successfully downloaded.",
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: "Download Failed",
-        description: "There was an error downloading your resume. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handlePreviewResume = () => {
-    toast({
-      title: "Resume Preview",
-      description: "This feature will open a preview of your resume in a new window.",
-    });
-  };
-
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Job & Internship Portal</h1>
 
       <Tabs defaultValue="browse">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="browse">Browse Opportunities</TabsTrigger>
           <TabsTrigger value="applications">My Applications</TabsTrigger>
-          <TabsTrigger value="resume">Resume Builder</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse">
@@ -349,262 +290,6 @@ const JobPortal = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="resume">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Resume Builder</h2>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={handlePreviewResume}>Preview</Button>
-                    <Button 
-                      className="bg-education-primary hover:bg-education-primary/90 flex items-center gap-2"
-                      onClick={handleDownloadResume}
-                      disabled={isDownloading}
-                    >
-                      <Download size={16} />
-                      {isDownloading ? "Generating..." : "Download PDF"}
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-6" ref={resumeRef}>
-                  <div>
-                    <h3 className="font-medium mb-3">Personal Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="fullname">Full Name</Label>
-                        <Input id="fullname" placeholder="John Doe" className="bg-white" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="john.doe@example.com" className="bg-white" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" placeholder="(123) 456-7890" className="bg-white" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input id="location" placeholder="City, State" className="bg-white" />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium">Education</h3>
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-education-primary">
-                        + Add Education
-                      </Button>
-                    </div>
-                    
-                    <div className="border rounded-lg p-4 mb-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="school">School/University</Label>
-                          <Input id="school" placeholder="University Name" className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="degree">Degree</Label>
-                          <Input id="degree" placeholder="Bachelor of Science" className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="field">Field of Study</Label>
-                          <Input id="field" placeholder="Computer Science" className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="gradDate">Graduation Date</Label>
-                          <Input id="gradDate" type="month" className="bg-white" />
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="edDesc">Description (Optional)</Label>
-                          <Input id="edDesc" placeholder="Notable achievements, GPA, etc." className="bg-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium">Experience</h3>
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-education-primary">
-                        + Add Experience
-                      </Button>
-                    </div>
-                    
-                    <div className="border rounded-lg p-4 mb-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="company">Company</Label>
-                          <Input id="company" placeholder="Company Name" className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="position">Position</Label>
-                          <Input id="position" placeholder="Job Title" className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="startDate">Start Date</Label>
-                          <Input id="startDate" type="month" className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="endDate">End Date</Label>
-                          <Input id="endDate" type="month" placeholder="Present" className="bg-white" />
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="jobDesc">Description</Label>
-                          <Input id="jobDesc" placeholder="Your responsibilities and achievements" className="bg-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium">Skills</h3>
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-education-primary">
-                        + Add Skill
-                      </Button>
-                    </div>
-                    
-                    <div className="border rounded-lg p-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge className="bg-education-light text-education-primary px-3 py-1 flex items-center gap-1">
-                          JavaScript <span className="cursor-pointer">×</span>
-                        </Badge>
-                        <Badge className="bg-education-light text-education-primary px-3 py-1 flex items-center gap-1">
-                          React <span className="cursor-pointer">×</span>
-                        </Badge>
-                        <Badge className="bg-education-light text-education-primary px-3 py-1 flex items-center gap-1">
-                          Node.js <span className="cursor-pointer">×</span>
-                        </Badge>
-                        <Badge className="bg-education-light text-education-primary px-3 py-1 flex items-center gap-1">
-                          Python <span className="cursor-pointer">×</span>
-                        </Badge>
-                        <Badge className="bg-education-light text-education-primary px-3 py-1 flex items-center gap-1">
-                          SQL <span className="cursor-pointer">×</span>
-                        </Badge>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            placeholder="Add new skill" 
-                            className="h-7 text-sm bg-white" 
-                          />
-                          <Button size="sm" className="h-7 px-2 bg-education-primary">Add</Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Resume Score</h2>
-                
-                <div className="flex justify-center mb-4">
-                  <div className="relative w-32 h-32">
-                    <svg className="w-full h-full" viewBox="0 0 36 36">
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="#eee"
-                        strokeWidth="3"
-                      />
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="#3a55a2"
-                        strokeWidth="3"
-                        strokeDasharray="75, 100"
-                      />
-                      <text
-                        x="18"
-                        y="20.35"
-                        className="text-lg font-bold"
-                        textAnchor="middle"
-                        fill="#333"
-                      >
-                        75%
-                      </text>
-                    </svg>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">Content</span>
-                      <span>Good</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: "80%" }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">Skills Match</span>
-                      <span>Excellent</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: "90%" }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">Experience</span>
-                      <span>Needs Improvement</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-yellow-500 rounded-full" style={{ width: "60%" }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">Education</span>
-                      <span>Good</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: "75%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 space-y-3">
-                  <h3 className="font-medium">Suggestions</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
-                      </svg>
-                      <span>Add more details to your work experience section</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
-                      </svg>
-                      <span>Use action verbs when describing responsibilities</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
-                      </svg>
-                      <span>Good job listing relevant technical skills</span>
-                    </li>
-                  </ul>
-                </div>
-                
-                <Button className="w-full mt-6 bg-education-primary hover:bg-education-primary/90">
-                  Get Expert Review
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
