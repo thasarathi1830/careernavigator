@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +24,6 @@ export default function Header() {
     try {
       setIsSigningOut(true);
 
-      // Use signOut() method with proper error handling
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
@@ -41,7 +39,6 @@ export default function Header() {
           description: "You have been signed out successfully."
         });
 
-        // Force navigation to auth page after successful sign out
         setTimeout(() => {
           navigate("/auth", {
             replace: true
@@ -74,9 +71,24 @@ export default function Header() {
           </p>
         </div>
 
+        <div className="ml-6 hidden md:flex items-center space-x-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/forum')}
+            className="text-sm font-medium"
+          >
+            Forum
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/projects')}
+            className="text-sm font-medium"
+          >
+            Projects
+          </Button>
+        </div>
+
         <div className="flex items-center gap-4 ml-auto">
-          {/* ThemeToggle component removed as requested */}
-          
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -90,6 +102,12 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/projects")}>
+                  Projects
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/forum")}>
+                  Discussion Forum
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   Settings
