@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { PlusCircle } from "lucide-react";
 
 interface ForumPost {
   id: string;
@@ -51,58 +53,115 @@ interface Profile {
 
 const Forum = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [posts, setPosts] = useState<ExtendedForumPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<ExtendedForumPost | null>(null);
   const [replies, setReplies] = useState<ExtendedForumReply[]>([]);
   const [replyContent, setReplyContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState("");
+  const [newPostContent, setNewPostContent] = useState("");
+  const [newPostTags, setNewPostTags] = useState("");
 
   useEffect(() => {
     fetchPosts();
   }, []);
+  
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+        
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile doesn't exist, create one
+          if (user && user.id === userId) {
+            await createUserProfile(userId);
+            return { full_name: "New User", avatar_url: null };
+          }
+        }
+        console.error("Error fetching profile:", error);
+        return { full_name: "Unknown User", avatar_url: null };
+      }
+      
+      return data || { full_name: "Unknown User", avatar_url: null };
+    } catch (error) {
+      console.error("Unexpected error fetching profile:", error);
+      return { full_name: "Unknown User", avatar_url: null };
+    }
+  };
+  
+  const createUserProfile = async (userId: string) => {
+    try {
+      await supabase.from("profiles").insert({
+        id: userId,
+        full_name: "New User",
+        updated_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error creating profile:", error);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
       
-      // Fetch forum posts and join with profiles
+      // Fetch forum posts
       const { data: postsData, error: postsError } = await supabase
         .from("forum_posts")
-        .select(`
-          *,
-          profiles:profile_id(full_name, avatar_url)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
-      if (postsError) throw postsError;
+      if (postsError) {
+        console.error("Error fetching posts:", postsError);
+        toast({
+          title: "Error",
+          description: "Failed to load discussions. Please try again.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
 
-      // Fetch replies count for each post
-      const postsWithReplyCounts = await Promise.all(
+      // Fetch profile information and reply counts for each post
+      const postsWithDetails = await Promise.all(
         (postsData || []).map(async (post) => {
-          const { count, error } = await supabase
+          // Get profile information
+          const profile = await fetchUserProfile(post.profile_id);
+          
+          // Get reply count
+          const { count, error: countError } = await supabase
             .from("forum_replies")
             .select("*", { count: "exact", head: true })
             .eq("post_id", post.id);
-
-          const profileData = Array.isArray(post.profiles) && post.profiles.length > 0 
-            ? post.profiles[0] 
-            : { full_name: "Unknown User", avatar_url: null };
+            
+          if (countError) console.error("Error counting replies:", countError);
 
           return {
             ...post,
-            author: profileData.full_name || "Unknown User",
+            author: profile.full_name || "Unknown User",
             author_id: post.profile_id,
-            author_avatar: profileData.avatar_url,
+            author_avatar: profile.avatar_url,
             date: new Date(post.created_at).toLocaleDateString(),
             replies: count || 0
           };
         })
       );
 
-      setPosts(postsWithReplyCounts);
+      setPosts(postsWithDetails);
     } catch (error) {
-      console.error("Error fetching posts:", error);
+      console.error("Error in fetchPosts:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -121,38 +180,58 @@ const Forum = () => {
       // Fetch replies for the selected post
       const { data: repliesData, error: repliesError } = await supabase
         .from("forum_replies")
-        .select(`
-          *,
-          profiles:profile_id(full_name, avatar_url)
-        `)
+        .select("*")
         .eq("post_id", post.id)
         .order("is_accepted_answer", { ascending: false })
         .order("created_at", { ascending: true });
       
-      if (repliesError) throw repliesError;
+      if (repliesError) {
+        console.error("Error fetching replies:", repliesError);
+        toast({
+          title: "Error",
+          description: "Failed to load replies. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      const formattedReplies = (repliesData || []).map(reply => {
-        const profileData = Array.isArray(reply.profiles) && reply.profiles.length > 0 
-          ? reply.profiles[0] 
-          : { full_name: "Unknown User", avatar_url: null };
-
-        return {
-          ...reply,
-          author: profileData.full_name || "Unknown User",
-          author_id: reply.profile_id,
-          author_avatar: profileData.avatar_url,
-          date: new Date(reply.created_at).toLocaleDateString()
-        };
-      });
+      // Fetch profile information for each reply
+      const formattedReplies = await Promise.all(
+        (repliesData || []).map(async (reply) => {
+          const profile = await fetchUserProfile(reply.profile_id);
+          
+          return {
+            ...reply,
+            author: profile.full_name || "Unknown User",
+            author_id: reply.profile_id,
+            author_avatar: profile.avatar_url,
+            date: new Date(reply.created_at).toLocaleDateString()
+          };
+        })
+      );
       
       setReplies(formattedReplies);
     } catch (error) {
-      console.error("Error fetching replies:", error);
+      console.error("Error in selectPost:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const submitReply = async () => {
-    if (!user || !selectedPost || !replyContent.trim()) return;
+    if (!user || !selectedPost || !replyContent.trim()) {
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "You need to sign in to post a reply.",
+          variant: "destructive"
+        });
+      }
+      return;
+    }
     
     try {
       const { error } = await supabase
@@ -164,17 +243,50 @@ const Forum = () => {
           is_accepted_answer: false
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error submitting reply:", error);
+        toast({
+          title: "Error",
+          description: "Failed to submit reply. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "Success",
+        description: "Your reply has been posted.",
+      });
       
       setReplyContent("");
       selectPost(selectedPost); // Refresh replies
     } catch (error) {
-      console.error("Error submitting reply:", error);
+      console.error("Unexpected error submitting reply:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const markAsAnswer = async (replyId: string) => {
-    if (!selectedPost) return;
+    if (!selectedPost || !user || user.id !== selectedPost.author_id) {
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "You need to sign in to mark an answer.",
+          variant: "destructive"
+        });
+      } else if (user.id !== selectedPost?.author_id) {
+        toast({
+          title: "Permission Denied",
+          description: "Only the post author can mark an answer as solution.",
+          variant: "destructive"
+        });
+      }
+      return;
+    }
     
     try {
       // First, reset all replies for this post
@@ -195,9 +307,101 @@ const Forum = () => {
         .update({ is_answered: true })
         .eq("id", selectedPost.id);
       
+      toast({
+        title: "Success",
+        description: "Answer marked as solution.",
+      });
+      
       selectPost(selectedPost); // Refresh replies
     } catch (error) {
       console.error("Error marking as answer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark solution. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const createNewPost = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to sign in to create a post.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!newPostTitle.trim() || !newPostContent.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Post title and content are required.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Process tags into array
+      const tagsArray = newPostTags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag);
+      
+      const { data, error } = await supabase
+        .from("forum_posts")
+        .insert({
+          title: newPostTitle,
+          content: newPostContent,
+          tags: tagsArray.length > 0 ? tagsArray : null,
+          profile_id: user.id
+        })
+        .select();
+      
+      if (error) {
+        console.error("Error creating post:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create post. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "Success",
+        description: "Your post has been created.",
+      });
+      
+      // Reset form and refresh posts
+      setIsCreatingPost(false);
+      setNewPostTitle("");
+      setNewPostContent("");
+      setNewPostTags("");
+      fetchPosts();
+      
+      // Select the newly created post if available
+      if (data && data.length > 0) {
+        const profile = await fetchUserProfile(user.id);
+        const newPost = {
+          ...data[0],
+          author: profile.full_name || "Unknown User",
+          author_id: user.id,
+          author_avatar: profile.avatar_url,
+          date: new Date(data[0].created_at).toLocaleDateString(),
+          replies: 0
+        };
+        setSelectedPost(newPost);
+        setReplies([]);
+      }
+    } catch (error) {
+      console.error("Unexpected error creating post:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -211,12 +415,19 @@ const Forum = () => {
     <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Student Forum</h1>
-        <Input
-          placeholder="Search discussions..."
-          className="max-w-xs"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="flex gap-2">
+          <Input
+            placeholder="Search discussions..."
+            className="max-w-xs"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {user && (
+            <Button onClick={() => setIsCreatingPost(true)} className="whitespace-nowrap">
+              <PlusCircle className="h-4 w-4 mr-2" /> New Discussion
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -229,7 +440,9 @@ const Forum = () => {
               {isLoading ? (
                 <div className="p-4">Loading discussions...</div>
               ) : filteredPosts.length === 0 ? (
-                <div className="p-4">No discussions found</div>
+                <div className="p-4 text-center">
+                  {searchTerm ? "No discussions found matching your search" : "No discussions yet. Be the first to start one!"}
+                </div>
               ) : (
                 <ul className="divide-y">
                   {filteredPosts.map((post) => (
@@ -265,7 +478,50 @@ const Forum = () => {
         </div>
         
         <div className="md:col-span-2">
-          {selectedPost ? (
+          {isCreatingPost ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Discussion</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="postTitle" className="block text-sm font-medium mb-1">Title</label>
+                    <Input 
+                      id="postTitle"
+                      value={newPostTitle} 
+                      onChange={(e) => setNewPostTitle(e.target.value)}
+                      placeholder="Enter a descriptive title" 
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="postContent" className="block text-sm font-medium mb-1">Content</label>
+                    <Textarea 
+                      id="postContent"
+                      value={newPostContent} 
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      placeholder="Describe your question or topic in detail" 
+                      rows={8}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="postTags" className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+                    <Input 
+                      id="postTags"
+                      value={newPostTags} 
+                      onChange={(e) => setNewPostTags(e.target.value)}
+                      placeholder="e.g. java, programming, homework" 
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Add relevant tags to help others find your post</p>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCreatingPost(false)}>Cancel</Button>
+                <Button onClick={createNewPost}>Post Discussion</Button>
+              </CardFooter>
+            </Card>
+          ) : selectedPost ? (
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -325,7 +581,7 @@ const Forum = () => {
                               <Badge variant="default" className="bg-green-600">Solution</Badge>
                             )}
                             
-                            {user?.id === selectedPost.author_id && !reply.is_accepted_answer && (
+                            {user && user.id === selectedPost.author_id && !reply.is_accepted_answer && (
                               <Button 
                                 size="sm" 
                                 variant="ghost"
@@ -362,7 +618,7 @@ const Forum = () => {
                 ) : (
                   <div className="w-full text-center py-4">
                     <p className="text-muted-foreground mb-2">You need to sign in to reply</p>
-                    <Button variant="outline">Sign In</Button>
+                    <Button variant="outline" onClick={() => navigate("/auth")}>Sign In</Button>
                   </div>
                 )}
               </CardFooter>
@@ -372,6 +628,15 @@ const Forum = () => {
               <div>
                 <h3 className="font-medium text-lg mb-2">Select a discussion</h3>
                 <p className="text-muted-foreground">Choose a topic from the list to view the discussion</p>
+                {user && (
+                  <Button 
+                    onClick={() => setIsCreatingPost(true)} 
+                    className="mt-4"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" /> 
+                    Start a new discussion
+                  </Button>
+                )}
               </div>
             </div>
           )}
