@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ForumPost {
   id: string;
@@ -54,6 +54,7 @@ interface Profile {
 const Forum = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<ExtendedForumPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<ExtendedForumPost | null>(null);
   const [replies, setReplies] = useState<ExtendedForumReply[]>([]);
