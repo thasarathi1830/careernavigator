@@ -10,6 +10,8 @@ import ResumeBuilder from "@/pages/ResumeBuilder";
 import JobPortal from "@/pages/JobPortal";
 import Exams from "@/pages/Exams";
 import Settings from "@/pages/Settings";
+import Forum from "@/pages/Forum"; // Import the Forum component
+import Profile from "@/pages/Profile"; // Import the Profile component as it may be needed based on your header
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
               <Route path="/job-portal" element={<JobPortal />} />
               <Route path="/exams" element={<Exams />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/forum" element={<Forum />} /> {/* Add Forum route */}
+              <Route path="/profile" element={<Profile />} /> {/* Add Profile route */}
             </Route>
           </Routes>
         </Router>
